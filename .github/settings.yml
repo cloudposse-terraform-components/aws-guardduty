@@ -5,5 +5,3 @@ repository:
   description: This component is responsible for configuring GuardDuty within an AWS Organization
   homepage: https://cloudposse.com/accelerate
   topics: terraform, terraform-component
-
-
