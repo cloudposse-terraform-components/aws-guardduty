@@ -4,12 +4,12 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 5.0"
+      version = ">= 5.0, < 6.0.0"
     }
 
     awsutils = {
       source  = "cloudposse/awsutils"
-      version = ">= 0.16.0"
+      version = ">= 0.16.0, < 6.0.0"
     }
   }
 }
