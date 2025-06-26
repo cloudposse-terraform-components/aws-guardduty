@@ -155,15 +155,15 @@ atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0.0 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.0 |
-| <a name="requirement_awsutils"></a> [awsutils](#requirement\_awsutils) | >= 0.16.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.0, < 6.0.0 |
+| <a name="requirement_awsutils"></a> [awsutils](#requirement\_awsutils) | >= 0.16.0, < 6.0.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.0 |
-| <a name="provider_awsutils"></a> [awsutils](#provider\_awsutils) | >= 0.16.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.0, < 6.0.0 |
+| <a name="provider_awsutils"></a> [awsutils](#provider\_awsutils) | >= 0.16.0, < 6.0.0 |
 
 ## Modules
 
