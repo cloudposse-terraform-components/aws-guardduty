@@ -42,7 +42,6 @@ Key features and components of AWS GuardDuty include:
 
 GuardDuty offers a scalable and flexible approach to threat detection within AWS environments, providing organizations
 with an additional layer of security to proactively identify and respond to potential security risks.
-
 ## Usage
 
 **Stack Level**: Regional
@@ -149,7 +148,10 @@ atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
 ```
 
 <!-- prettier-ignore-start -->
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- prettier-ignore-end -->
+
+
+<!-- markdownlint-disable -->
 ## Requirements
 
 | Name | Version |
@@ -237,12 +239,19 @@ atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
 | <a name="output_guardduty_detector_id"></a> [guardduty\_detector\_id](#output\_guardduty\_detector\_id) | The ID of the GuardDuty detector created by the component |
 | <a name="output_sns_topic_name"></a> [sns\_topic\_name](#output\_sns\_topic\_name) | The name of the SNS topic created by the component |
 | <a name="output_sns_topic_subscriptions"></a> [sns\_topic\_subscriptions](#output\_sns\_topic\_subscriptions) | The SNS topic subscriptions created by the component |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
-<!-- prettier-ignore-end -->
+<!-- markdownlint-restore -->
+
+
 
 ## References
 
-- [AWS GuardDuty Documentation](https://aws.amazon.com/guardduty/)
-- [Cloud Posse's upstream component](https://github.com/cloudposse/terraform-aws-components/tree/main/modules/guardduty/common/)
+
+- [AWS GuardDuty Documentation](https://aws.amazon.com/guardduty/) - 
+
+- [Cloud Posse's upstream component](https://github.com/cloudposse/terraform-aws-components/tree/main/modules/guardduty/common/) - 
+
+
+
 
 [<img src="https://cloudposse.com/logo-300x69.svg" height="32" align="right"/>](https://cpco.io/homepage?utm_source=github&utm_medium=readme&utm_campaign=cloudposse-terraform-components/aws-guardduty&utm_content=)
+
