@@ -39,6 +39,8 @@ description: |-
   GuardDuty offers a scalable and flexible approach to threat detection within AWS environments, providing organizations
   with an additional layer of security to proactively identify and respond to potential security risks.
 
+  ## Supported GuardDuty Protection Features
+
   This component supports the following GuardDuty protection features:
 
   - **S3 Protection**: Monitors S3 data events to detect suspicious activities in your S3 buckets
@@ -46,8 +48,34 @@ description: |-
   - **Malware Protection**: Scans EBS volumes attached to EC2 instances for malware
   - **Lambda Protection**: Monitors Lambda function network activity logs
   - **Runtime Monitoring**: Provides runtime threat detection for EC2, ECS, and EKS workloads with automatic security agent management
+
+  ## SNS Notifications
+
+  This component creates its own SNS topic, SQS queue, and KMS key for GuardDuty findings notifications instead of using
+  the ones from the upstream `cloudposse/guardduty/aws` module. This is a workaround for
+  [cloudposse/terraform-aws-guardduty#10](https://github.com/cloudposse/terraform-aws-guardduty/issues/10) where the
+  module's SNS topic encryption doesn't grant EventBridge permission to decrypt messages.
+
+  The component creates:
+  - A custom **KMS key** with proper permissions for EventBridge, SNS, and SQS services
+  - An **SNS topic** encrypted with the custom KMS key
+  - An **SQS queue** subscribed to the SNS topic for message processing
+  - **CloudWatch Event Rules** to route GuardDuty findings to the SNS topic
+
+  To enable notifications, set `create_sns_topic: true` and `cloudwatch_enabled: true`.
+
 usage: |-
   **Stack Level**: Regional
+
+  ## Prerequisites
+
+  Before deploying this component, ensure that GuardDuty trusted access is enabled in AWS Organizations. This can be done
+  by adding `guardduty.amazonaws.com` to the `aws_service_access_principals` list in your `account` component, or by
+  running the following command from the management account:
+
+  ```bash
+  aws organizations enable-aws-service-access --service-principal guardduty.amazonaws.com
+  ```
 
   ## Deployment Overview
 
@@ -61,7 +89,7 @@ usage: |-
   In the examples below, we assume that the AWS Organization Management account is `root` and the AWS Organization
   Delegated Administrator account is `security`, both in the `core` tenant.
 
-  ### Deploy to Delegated Administrator Account
+  ### Step 1: Deploy to Delegated Administrator Account
 
   First, the component is deployed to the
   [Delegated Administrator](https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_organizations.html) account in each
@@ -88,7 +116,7 @@ usage: |-
   # ... other regions
   ```
 
-  ### Deploy to Organization Management (root) Account
+  ### Step 2: Deploy to Organization Management (root) Account
 
   Next, the component is deployed to the AWS Organization Management, a/k/a `root`, Account in order to set the AWS
   Organization Designated Administrator account.
@@ -122,7 +150,7 @@ usage: |-
   # ... other regions
   ```
 
-  ### Deploy Organization Settings in Delegated Administrator Account
+  ### Step 3: Deploy Organization Settings in Delegated Administrator Account
 
   Finally, the component is deployed to the Delegated Administrator Account again in order to create the organization-wide
   configuration for the AWS Organization, but with `var.admin_delegated` set to `true` to indicate that the delegation has
@@ -184,6 +212,33 @@ usage: |-
   > **Note**: You cannot enable both `eks_runtime_monitoring_enabled` and `runtime_monitoring_enabled` at the same time.
   > Use `runtime_monitoring_enabled` if you want runtime monitoring across EC2, ECS, and EKS resources.
 
+  ### Enabling SNS Notifications
+
+  To enable SNS notifications for GuardDuty findings, set `create_sns_topic` and `cloudwatch_enabled` to `true`:
+
+  ```yaml
+  # core-ue1-security
+  components:
+    terraform:
+      guardduty/delegated-administrator/ue1:
+        metadata:
+          component: guardduty
+        vars:
+          enabled: true
+          delegated_administrator_account_name: core-security
+          environment: ue1
+          region: us-east-1
+          # Enable SNS notifications
+          create_sns_topic: true
+          cloudwatch_enabled: true
+  ```
+
+  This will create:
+  - A KMS key with permissions for EventBridge, SNS, and SQS
+  - An encrypted SNS topic for GuardDuty findings
+  - An SQS queue subscribed to the SNS topic
+  - CloudWatch Event Rules to route findings to SNS
+
   <!-- prettier-ignore-start -->
   <!-- prettier-ignore-end -->
 references:
@@ -196,6 +251,9 @@ references:
   - name: "Cloud Posse's upstream component"
     description: ""
     url: "https://github.com/cloudposse/terraform-aws-components/tree/main/modules/guardduty/common/"
+  - name: "GuardDuty Organization Configuration Feature"
+    description: "Terraform AWS provider documentation for organization-wide GuardDuty features"
+    url: "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_organization_configuration_feature"
 tags:
   - component/guardduty
   - layer/security-and-compliance

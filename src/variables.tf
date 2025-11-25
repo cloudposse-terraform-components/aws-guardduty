@@ -238,8 +238,8 @@ variable "runtime_monitoring_enabled" {
   default     = false
   description = <<-DOC
   If `true`, enables Runtime Monitoring for EC2, ECS, and EKS resources.
-  Note: Enabling Runtime Monitoring will also enable EKS Runtime Monitoring.
-  You cannot enable both `eks_runtime_monitoring_enabled` and `runtime_monitoring_enabled` at the same time.
+  Note: Runtime Monitoring already includes threat detection for Amazon EKS resources, so you should not enable both
+  RUNTIME_MONITORING and EKS_RUNTIME_MONITORING features.
 
   For more information, see:
   https://docs.aws.amazon.com/guardduty/latest/ug/runtime-monitoring.html
@@ -250,9 +250,9 @@ variable "eks_runtime_monitoring_enabled" {
   type        = bool
   default     = false
   description = <<-DOC
-  If `true`, enables standalone EKS Runtime Monitoring.
-  Note: You cannot enable both `eks_runtime_monitoring_enabled` and `runtime_monitoring_enabled` at the same time.
-  Use `runtime_monitoring_enabled` if you want runtime monitoring across EC2, ECS, and EKS.
+  If `true`, enables EKS Runtime Monitoring.
+  Note: Do not enable both EKS_RUNTIME_MONITORING and RUNTIME_MONITORING as Runtime Monitoring already includes
+  threat detection for Amazon EKS resources.
 
   For more information, see:
   https://docs.aws.amazon.com/guardduty/latest/ug/eks-runtime-monitoring.html
@@ -268,15 +268,11 @@ variable "runtime_monitoring_additional_config" {
   default     = {}
   nullable    = false
   description = <<-DOC
-  Configuration for Runtime Monitoring agent management. This allows you to automatically manage the deployment
-  of the GuardDuty security agent across your EKS clusters, ECS Fargate tasks, and EC2 instances.
+  Additional configuration for Runtime Monitoring features.
 
-  eks_addon_management_enabled:
-    If `true`, GuardDuty will automatically manage the EKS add-on for Runtime Monitoring on your EKS clusters.
-  ecs_fargate_agent_management_enabled:
-    If `true`, GuardDuty will automatically manage the agent for ECS Fargate tasks.
-  ec2_agent_management_enabled:
-    If `true`, GuardDuty will automatically manage the agent for EC2 instances.
+  eks_addon_management_enabled: Enable EKS add-on management
+  ecs_fargate_agent_management_enabled: Enable ECS Fargate agent management
+  ec2_agent_management_enabled: Enable EC2 agent management
 
   For more information, see:
   https://docs.aws.amazon.com/guardduty/latest/ug/runtime-monitoring.html
