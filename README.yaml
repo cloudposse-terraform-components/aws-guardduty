@@ -38,6 +38,14 @@ description: |-
 
   GuardDuty offers a scalable and flexible approach to threat detection within AWS environments, providing organizations
   with an additional layer of security to proactively identify and respond to potential security risks.
+
+  This component supports the following GuardDuty protection features:
+
+  - **S3 Protection**: Monitors S3 data events to detect suspicious activities in your S3 buckets
+  - **EKS Audit Log Monitoring**: Analyzes Kubernetes audit logs from Amazon EKS clusters
+  - **Malware Protection**: Scans EBS volumes attached to EC2 instances for malware
+  - **Lambda Protection**: Monitors Lambda function network activity logs
+  - **Runtime Monitoring**: Provides runtime threat detection for EC2, ECS, and EKS workloads with automatic security agent management
 usage: |-
   **Stack Level**: Regional
 
@@ -142,12 +150,49 @@ usage: |-
   # ... other regions
   ```
 
+  ### Enabling GuardDuty Protection Features
+
+  You can enable various GuardDuty protection features by setting the corresponding variables. Here's an example with
+  all protection features enabled:
+
+  ```yaml
+  # core-ue1-security
+  components:
+    terraform:
+      guardduty/org-settings/ue1:
+        metadata:
+          component: guardduty
+        vars:
+          enabled: true
+          delegated_administrator_account_name: core-security
+          environment: use1
+          region: us-east-1
+          admin_delegated: true
+          # Protection features
+          s3_protection_enabled: true
+          kubernetes_audit_logs_enabled: true
+          malware_protection_scan_ec2_ebs_volumes_enabled: true
+          lambda_network_logs_enabled: true
+          # Runtime Monitoring with automatic agent management
+          runtime_monitoring_enabled: true
+          runtime_monitoring_additional_config:
+            eks_addon_management_enabled: true
+            ecs_fargate_agent_management_enabled: true
+            ec2_agent_management_enabled: true
+  ```
+
+  > **Note**: You cannot enable both `eks_runtime_monitoring_enabled` and `runtime_monitoring_enabled` at the same time.
+  > Use `runtime_monitoring_enabled` if you want runtime monitoring across EC2, ECS, and EKS resources.
+
   <!-- prettier-ignore-start -->
   <!-- prettier-ignore-end -->
 references:
   - name: "AWS GuardDuty Documentation"
     description: ""
     url: "https://aws.amazon.com/guardduty/"
+  - name: "Cloud Posse terraform-aws-guardduty module"
+    description: "The underlying Terraform module used by this component"
+    url: "https://github.com/cloudposse/terraform-aws-guardduty"
   - name: "Cloud Posse's upstream component"
     description: ""
     url: "https://github.com/cloudposse/terraform-aws-components/tree/main/modules/guardduty/common/"

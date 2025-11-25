@@ -42,6 +42,14 @@ Key features and components of AWS GuardDuty include:
 
 GuardDuty offers a scalable and flexible approach to threat detection within AWS environments, providing organizations
 with an additional layer of security to proactively identify and respond to potential security risks.
+
+This component supports the following GuardDuty protection features:
+
+- **S3 Protection**: Monitors S3 data events to detect suspicious activities in your S3 buckets
+- **EKS Audit Log Monitoring**: Analyzes Kubernetes audit logs from Amazon EKS clusters
+- **Malware Protection**: Scans EBS volumes attached to EC2 instances for malware
+- **Lambda Protection**: Monitors Lambda function network activity logs
+- **Runtime Monitoring**: Provides runtime threat detection for EC2, ECS, and EKS workloads with automatic security agent management
 ## Usage
 
 **Stack Level**: Regional
@@ -147,6 +155,40 @@ atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
 # ... other regions
 ```
 
+### Enabling GuardDuty Protection Features
+
+You can enable various GuardDuty protection features by setting the corresponding variables. Here's an example with
+all protection features enabled:
+
+```yaml
+# core-ue1-security
+components:
+  terraform:
+    guardduty/org-settings/ue1:
+      metadata:
+        component: guardduty
+      vars:
+        enabled: true
+        delegated_administrator_account_name: core-security
+        environment: use1
+        region: us-east-1
+        admin_delegated: true
+        # Protection features
+        s3_protection_enabled: true
+        kubernetes_audit_logs_enabled: true
+        malware_protection_scan_ec2_ebs_volumes_enabled: true
+        lambda_network_logs_enabled: true
+        # Runtime Monitoring with automatic agent management
+        runtime_monitoring_enabled: true
+        runtime_monitoring_additional_config:
+          eks_addon_management_enabled: true
+          ecs_fargate_agent_management_enabled: true
+          ec2_agent_management_enabled: true
+```
+
+> **Note**: You cannot enable both `eks_runtime_monitoring_enabled` and `runtime_monitoring_enabled` at the same time.
+> Use `runtime_monitoring_enabled` if you want runtime monitoring across EC2, ECS, and EKS resources.
+
 <!-- prettier-ignore-start -->
 <!-- prettier-ignore-end -->
 
@@ -156,7 +198,7 @@ atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0.0 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3.0 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.0, < 6.0.0 |
 | <a name="requirement_awsutils"></a> [awsutils](#requirement\_awsutils) | >= 0.16.0, < 6.0.0 |
 
@@ -172,7 +214,7 @@ atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
 | Name | Source | Version |
 |------|--------|---------|
 | <a name="module_account_map"></a> [account\_map](#module\_account\_map) | cloudposse/stack-config/yaml//modules/remote-state | 1.8.0 |
-| <a name="module_guardduty"></a> [guardduty](#module\_guardduty) | cloudposse/guardduty/aws | 0.6.0 |
+| <a name="module_guardduty"></a> [guardduty](#module\_guardduty) | cloudposse/guardduty/aws | 1.0.0 |
 | <a name="module_guardduty_delegated_detector"></a> [guardduty\_delegated\_detector](#module\_guardduty\_delegated\_detector) | cloudposse/stack-config/yaml//modules/remote-state | 1.8.0 |
 | <a name="module_iam_roles"></a> [iam\_roles](#module\_iam\_roles) | ../account-map/modules/iam-roles | n/a |
 | <a name="module_this"></a> [this](#module\_this) | cloudposse/label/null | 0.25.0 |
@@ -206,6 +248,7 @@ atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
 | <a name="input_delimiter"></a> [delimiter](#input\_delimiter) | Delimiter to be used between ID elements.<br/>Defaults to `-` (hyphen). Set to `""` to use no delimiter at all. | `string` | `null` | no |
 | <a name="input_descriptor_formats"></a> [descriptor\_formats](#input\_descriptor\_formats) | Describe additional descriptors to be output in the `descriptors` output map.<br/>Map of maps. Keys are names of descriptors. Values are maps of the form<br/>`{<br/>  format = string<br/>  labels = list(string)<br/>}`<br/>(Type is `any` so the map values can later be enhanced to provide additional options.)<br/>`format` is a Terraform format string to be passed to the `format()` function.<br/>`labels` is a list of labels, in order, to pass to `format()` function.<br/>Label values will be normalized before being passed to `format()` so they will be<br/>identical to how they appear in `id`.<br/>Default is `{}` (`descriptors` output will be empty). | `any` | `{}` | no |
 | <a name="input_detector_features"></a> [detector\_features](#input\_detector\_features) | A map of detector features for streaming foundational data sources to detect communication with known malicious domains and IP addresses and identify anomalous behavior.<br/><br/>For more information, see:<br/>https://docs.aws.amazon.com/guardduty/latest/ug/guardduty-features-activation-model.html#guardduty-features<br/><br/>feature\_name:<br/>  The name of the detector feature. Possible values include: S3\_DATA\_EVENTS, EKS\_AUDIT\_LOGS, EBS\_MALWARE\_PROTECTION, RDS\_LOGIN\_EVENTS, EKS\_RUNTIME\_MONITORING, LAMBDA\_NETWORK\_LOGS, RUNTIME\_MONITORING. Specifying both EKS Runtime Monitoring (EKS\_RUNTIME\_MONITORING) and Runtime Monitoring (RUNTIME\_MONITORING) will cause an error. You can add only one of these two features because Runtime Monitoring already includes the threat detection for Amazon EKS resources. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorFeatureConfiguration.html.<br/>status:<br/>  The status of the detector feature. Valid values include: ENABLED or DISABLED.<br/>additional\_configuration:<br/>  Optional information about the additional configuration for a feature in your GuardDuty account. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorAdditionalConfiguration.html.<br/>addon\_name:<br/>  The name of the add-on for which the configuration applies. Possible values include: EKS\_ADDON\_MANAGEMENT, ECS\_FARGATE\_AGENT\_MANAGEMENT, and EC2\_AGENT\_MANAGEMENT. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorAdditionalConfiguration.html.<br/>status:<br/>  The status of the add-on. Valid values include: ENABLED or DISABLED. | <pre>map(object({<br/>    feature_name = string<br/>    status       = string<br/>    additional_configuration = optional(object({<br/>      addon_name = string<br/>      status     = string<br/>    }), null)<br/>  }))</pre> | `{}` | no |
+| <a name="input_eks_runtime_monitoring_enabled"></a> [eks\_runtime\_monitoring\_enabled](#input\_eks\_runtime\_monitoring\_enabled) | If `true`, enables standalone EKS Runtime Monitoring.<br/>Note: You cannot enable both `eks_runtime_monitoring_enabled` and `runtime_monitoring_enabled` at the same time.<br/>Use `runtime_monitoring_enabled` if you want runtime monitoring across EC2, ECS, and EKS.<br/><br/>For more information, see:<br/>https://docs.aws.amazon.com/guardduty/latest/ug/eks-runtime-monitoring.html | `bool` | `false` | no |
 | <a name="input_enabled"></a> [enabled](#input\_enabled) | Set to false to prevent the module from creating any resources | `bool` | `null` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | ID element. Usually used for region e.g. 'uw2', 'us-west-2', OR role 'prod', 'staging', 'dev', 'UAT' | `string` | `null` | no |
 | <a name="input_finding_publishing_frequency"></a> [finding\_publishing\_frequency](#input\_finding\_publishing\_frequency) | The frequency of notifications sent for finding occurrences. If the detector is a GuardDuty member account, the value<br/>is determined by the GuardDuty master account and cannot be modified, otherwise it defaults to SIX\_HOURS.<br/><br/>For standalone and GuardDuty master accounts, it must be configured in Terraform to enable drift detection.<br/>Valid values for standalone and master accounts: FIFTEEN\_MINUTES, ONE\_HOUR, SIX\_HOURS."<br/><br/>For more information, see:<br/>https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_findings_cloudwatch.html#guardduty_findings_cloudwatch_notification_frequency | `string` | `null` | no |
@@ -217,6 +260,7 @@ atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
 | <a name="input_label_order"></a> [label\_order](#input\_label\_order) | The order in which the labels (ID elements) appear in the `id`.<br/>Defaults to ["namespace", "environment", "stage", "name", "attributes"].<br/>You can omit any of the 6 labels ("tenant" is the 6th), but at least one must be present. | `list(string)` | `null` | no |
 | <a name="input_label_value_case"></a> [label\_value\_case](#input\_label\_value\_case) | Controls the letter case of ID elements (labels) as included in `id`,<br/>set as tag values, and output by this module individually.<br/>Does not affect values of tags passed in via the `tags` input.<br/>Possible values: `lower`, `title`, `upper` and `none` (no transformation).<br/>Set this to `title` and set `delimiter` to `""` to yield Pascal Case IDs.<br/>Default value: `lower`. | `string` | `null` | no |
 | <a name="input_labels_as_tags"></a> [labels\_as\_tags](#input\_labels\_as\_tags) | Set of labels (ID elements) to include as tags in the `tags` output.<br/>Default is to include all labels.<br/>Tags with empty values will not be included in the `tags` output.<br/>Set to `[]` to suppress all generated tags.<br/>**Notes:**<br/>  The value of the `name` tag, if included, will be the `id`, not the `name`.<br/>  Unlike other `null-label` inputs, the initial setting of `labels_as_tags` cannot be<br/>  changed in later chained modules. Attempts to change it will be silently ignored. | `set(string)` | <pre>[<br/>  "default"<br/>]</pre> | no |
+| <a name="input_lambda_network_logs_enabled"></a> [lambda\_network\_logs\_enabled](#input\_lambda\_network\_logs\_enabled) | If `true`, enables Lambda network logs as a data source for Lambda protection.<br/><br/>For more information, see:<br/>https://docs.aws.amazon.com/guardduty/latest/ug/lambda-protection.html | `bool` | `false` | no |
 | <a name="input_malware_protection_scan_ec2_ebs_volumes_enabled"></a> [malware\_protection\_scan\_ec2\_ebs\_volumes\_enabled](#input\_malware\_protection\_scan\_ec2\_ebs\_volumes\_enabled) | Configure whether Malware Protection is enabled as data source for EC2 instances EBS Volumes in GuardDuty.<br/><br/>For more information, see:<br/>https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector#malware-protection | `bool` | `false` | no |
 | <a name="input_name"></a> [name](#input\_name) | ID element. Usually the component or solution name, e.g. 'app' or 'jenkins'.<br/>This is the only ID element not also included as a `tag`.<br/>The "name" tag is set to the full `id` string. There is no tag with the value of the `name` input. | `string` | `null` | no |
 | <a name="input_namespace"></a> [namespace](#input\_namespace) | ID element. Usually an abbreviation of your organization name, e.g. 'eg' or 'cp', to help ensure generated IDs are globally unique | `string` | `null` | no |
@@ -225,6 +269,8 @@ atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
 | <a name="input_regex_replace_chars"></a> [regex\_replace\_chars](#input\_regex\_replace\_chars) | Terraform regular expression (regex) string.<br/>Characters matching the regex will be removed from the ID elements.<br/>If not set, `"/[^a-zA-Z0-9-]/"` is used to remove all characters other than hyphens, letters and digits. | `string` | `null` | no |
 | <a name="input_region"></a> [region](#input\_region) | AWS Region | `string` | n/a | yes |
 | <a name="input_root_account_stage"></a> [root\_account\_stage](#input\_root\_account\_stage) | The stage name for the Organization root (management) account. This is used to lookup account IDs from account names<br/>using the `account-map` component. | `string` | `"root"` | no |
+| <a name="input_runtime_monitoring_additional_config"></a> [runtime\_monitoring\_additional\_config](#input\_runtime\_monitoring\_additional\_config) | Configuration for Runtime Monitoring agent management. This allows you to automatically manage the deployment<br/>of the GuardDuty security agent across your EKS clusters, ECS Fargate tasks, and EC2 instances.<br/><br/>eks\_addon\_management\_enabled:<br/>  If `true`, GuardDuty will automatically manage the EKS add-on for Runtime Monitoring on your EKS clusters.<br/>ecs\_fargate\_agent\_management\_enabled:<br/>  If `true`, GuardDuty will automatically manage the agent for ECS Fargate tasks.<br/>ec2\_agent\_management\_enabled:<br/>  If `true`, GuardDuty will automatically manage the agent for EC2 instances.<br/><br/>For more information, see:<br/>https://docs.aws.amazon.com/guardduty/latest/ug/runtime-monitoring.html | <pre>object({<br/>    eks_addon_management_enabled         = optional(bool, false)<br/>    ecs_fargate_agent_management_enabled = optional(bool, false)<br/>    ec2_agent_management_enabled         = optional(bool, false)<br/>  })</pre> | `{}` | no |
+| <a name="input_runtime_monitoring_enabled"></a> [runtime\_monitoring\_enabled](#input\_runtime\_monitoring\_enabled) | If `true`, enables Runtime Monitoring for EC2, ECS, and EKS resources.<br/>Note: Enabling Runtime Monitoring will also enable EKS Runtime Monitoring.<br/>You cannot enable both `eks_runtime_monitoring_enabled` and `runtime_monitoring_enabled` at the same time.<br/><br/>For more information, see:<br/>https://docs.aws.amazon.com/guardduty/latest/ug/runtime-monitoring.html | `bool` | `false` | no |
 | <a name="input_s3_protection_enabled"></a> [s3\_protection\_enabled](#input\_s3\_protection\_enabled) | If `true`, enables S3 protection.<br/><br/>For more information, see:<br/>https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector#s3-logs | `bool` | `true` | no |
 | <a name="input_stage"></a> [stage](#input\_stage) | ID element. Usually used to indicate role, e.g. 'prod', 'staging', 'source', 'build', 'test', 'deploy', 'release' | `string` | `null` | no |
 | <a name="input_subscribers"></a> [subscribers](#input\_subscribers) | A map of subscription configurations for SNS topics<br/><br/>For more information, see:<br/>https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic_subscription#argument-reference<br/><br/>protocol:<br/>  The protocol to use. The possible values for this are: sqs, sms, lambda, application. (http or https are partially<br/>  supported, see link) (email is an option but is unsupported in terraform, see link).<br/>endpoint:<br/>  The endpoint to send data to, the contents will vary with the protocol. (see link for more information)<br/>endpoint\_auto\_confirms:<br/>  Boolean indicating whether the end point is capable of auto confirming subscription e.g., PagerDuty. Default is<br/>  false.<br/>raw\_message\_delivery:<br/>  Boolean indicating whether or not to enable raw message delivery (the original message is directly passed, not<br/>  wrapped in JSON with the original message in the message property). Default is false. | <pre>map(object({<br/>    protocol               = string<br/>    endpoint               = string<br/>    endpoint_auto_confirms = bool<br/>    raw_message_delivery   = bool<br/>  }))</pre> | `{}` | no |
@@ -248,6 +294,8 @@ atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
 
 
 - [AWS GuardDuty Documentation](https://aws.amazon.com/guardduty/) - 
+
+- [Cloud Posse terraform-aws-guardduty module](https://github.com/cloudposse/terraform-aws-guardduty) - The underlying Terraform module used by this component
 
 - [Cloud Posse's upstream component](https://github.com/cloudposse/terraform-aws-components/tree/main/modules/guardduty/common/) - 
 

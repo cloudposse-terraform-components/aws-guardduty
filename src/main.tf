@@ -32,15 +32,21 @@ resource "aws_guardduty_organization_admin_account" "this" {
 module "guardduty" {
   count   = local.create_guardduty_collector ? 1 : 0
   source  = "cloudposse/guardduty/aws"
-  version = "0.6.0"
+  version = "1.0.0"
 
-  finding_publishing_frequency              = var.finding_publishing_frequency
-  create_sns_topic                          = local.create_sns_topic
-  findings_notification_arn                 = var.findings_notification_arn
-  subscribers                               = var.subscribers
-  enable_cloudwatch                         = var.cloudwatch_enabled
-  cloudwatch_event_rule_pattern_detail_type = var.cloudwatch_event_rule_pattern_detail_type
-  s3_protection_enabled                     = var.s3_protection_enabled
+  finding_publishing_frequency                   = var.finding_publishing_frequency
+  create_sns_topic                               = local.create_sns_topic
+  findings_notification_arn                      = var.findings_notification_arn
+  subscribers                                    = var.subscribers
+  enable_cloudwatch                              = var.cloudwatch_enabled
+  cloudwatch_event_rule_pattern_detail_type      = var.cloudwatch_event_rule_pattern_detail_type
+  s3_protection_enabled                          = var.s3_protection_enabled
+  kubernetes_audit_logs_enabled                  = var.kubernetes_audit_logs_enabled
+  malware_protection_scan_ec2_ebs_volumes_enabled = var.malware_protection_scan_ec2_ebs_volumes_enabled
+  lambda_network_logs_enabled                    = var.lambda_network_logs_enabled
+  runtime_monitoring_enabled                     = var.runtime_monitoring_enabled
+  eks_runtime_monitoring_enabled                 = var.eks_runtime_monitoring_enabled
+  runtime_monitoring_additional_config           = var.runtime_monitoring_additional_config
 
   context = module.this.context
 }
