@@ -48,7 +48,7 @@ variable "create_sns_topic" {
   DOC
 }
 
-variable "delegated_admininstrator_component_name" {
+variable "delegated_administrator_component_name" {
   type        = string
   default     = "guardduty/delegated-administrator"
   description = "The name of the component that created the GuardDuty detector."
@@ -190,10 +190,10 @@ variable "detector_features" {
   type = map(object({
     feature_name = string
     status       = string
-    additional_configuration = optional(object({
+    additional_configuration = optional(list(object({
       addon_name = string
       status     = string
-    }), null)
+    })), [])
   }))
   default     = {}
   nullable    = false
@@ -208,7 +208,7 @@ variable "detector_features" {
   status:
     The status of the detector feature. Valid values include: ENABLED or DISABLED.
   additional_configuration:
-    Optional information about the additional configuration for a feature in your GuardDuty account. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorAdditionalConfiguration.html.
+    Optional list of additional configurations for a feature in your GuardDuty account. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorAdditionalConfiguration.html.
   addon_name:
     The name of the add-on for which the configuration applies. Possible values include: EKS_ADDON_MANAGEMENT, ECS_FARGATE_AGENT_MANAGEMENT, and EC2_AGENT_MANAGEMENT. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorAdditionalConfiguration.html.
   status:
@@ -266,6 +266,7 @@ variable "runtime_monitoring_additional_config" {
     ec2_agent_management_enabled         = optional(bool, false)
   })
   default     = {}
+  nullable    = false
   description = <<-DOC
   Configuration for Runtime Monitoring agent management. This allows you to automatically manage the deployment
   of the GuardDuty security agent across your EKS clusters, ECS Fargate tasks, and EC2 instances.

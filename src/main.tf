@@ -95,7 +95,7 @@ resource "aws_guardduty_detector_feature" "this" {
   status      = each.value.status
 
   dynamic "additional_configuration" {
-    for_each = each.value.additional_configuration != null ? [each.value.additional_configuration] : []
+    for_each = each.value.additional_configuration
     content {
       name   = additional_configuration.value.addon_name
       status = additional_configuration.value.status
