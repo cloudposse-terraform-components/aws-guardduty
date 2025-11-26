@@ -13,7 +13,7 @@ using [Terratest](https://terratest.gruntwork.io/) and [Atmos](https://atmos.too
 
 ## Test Structure
 
-```
+```text
 test/
 ├── component_test.go          # Go test file with all test cases
 ├── go.mod                     # Go module definition
