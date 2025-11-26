@@ -2,24 +2,26 @@ components:
   terraform:
     account-map:
       metadata:
-        component: account-map
-      settings:
-        spacelift:
-          workspace_enabled: false
+        terraform_workspace: core-gbl-root
       vars:
-        # This static backend is used for tests that only need to use
-        # the account map iam-roles module to identify what roles are
-        # available for Terraform to use. It requires the TEST_ACCOUNT_ID
-        # environment variable to be set.
+        tenant: core
+        environment: gbl
+        stage: root
+
+      remote_state_backend_type: static
+      remote_state_backend:
         static:
-          outputs:
-            full_account_map:
-              default-test: ${ env:TEST_ACCOUNT_ID }
-            terraform_roles:
-              default-test:
-                terraform: arn:aws:iam::${ env:TEST_ACCOUNT_ID }:role/cptest-terraform
-            profiles_enabled: false
-            root_account_account_name: default-test
-            iam_role_arn_templates:
-              terraform: arn:aws:iam::${ env:TEST_ACCOUNT_ID }:role/cptest-terraform
-              planner: arn:aws:iam::${ env:TEST_ACCOUNT_ID }:role/cptest-planner
+          account_info_map: {}
+          all_accounts: []
+          aws_partition: aws
+          full_account_map: {}
+          iam_role_arn_templates: {}
+          non_eks_accounts: []
+          profiles_enabled: false
+          root_account_aws_name: root
+          terraform_access_map: {}
+          terraform_dynamic_role_enabled: false
+          terraform_role_name_map:
+            apply: terraform
+            plan: planner
+          terraform_roles: {}

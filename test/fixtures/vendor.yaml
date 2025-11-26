@@ -9,7 +9,7 @@ spec:
       source: github.com/cloudposse/terraform-aws-components.git//modules/account-map?ref={{.Version}}
       version: 1.520.0
       targets:
-        - fixtures/components/terraform/account-map
+        - components/terraform/account-map
       included_paths:
         - "**/*.tf"
         - "**/*.md"

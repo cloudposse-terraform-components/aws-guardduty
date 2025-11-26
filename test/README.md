@@ -18,9 +18,11 @@ test/
 ├── component_test.go          # Go test file with all test cases
 ├── go.mod                     # Go module definition
 ├── go.sum                     # Go module checksums (generated)
-├── vendor.yaml                # Atmos vendor configuration
+├── README.md                  # This file
 ├── fixtures/
 │   ├── atmos.yaml            # Atmos CLI configuration
+│   ├── vendor.yaml           # Atmos vendor configuration
+│   ├── .gitignore            # Ignore vendored components
 │   ├── components/terraform/  # Vendored components (generated)
 │   └── stacks/
 │       ├── catalog/

@@ -5,14 +5,17 @@ terraform:
   backend_type: local
   backend:
     local:
-      path: "../../../state/{{ .Component }}/terraform.tfstate"
+      path: '{{ getenv "COMPONENT_HELPER_STATE_DIR" | default "../../../state" }}/{{ .component }}/terraform.tfstate'
+      workspace_dir: '{{ getenv "COMPONENT_HELPER_STATE_DIR" | default "../../../state" }}/{{ .component }}/'
 
 vars:
-  namespace: "eg"
-  tenant: "default"
-  environment: "ue2"
-  stage: "test"
-  region: "us-east-2"
+  namespace: eg
+  tenant: default
+  environment: ue2
+  region: us-east-2
+  stage: test
+  # For testing, we use privileged mode to avoid IAM role assumptions
+  privileged: true
   label_order:
     - namespace
     - tenant
@@ -21,41 +24,46 @@ vars:
     - name
     - attributes
   descriptor_formats:
-    stack:
-      format: "%s-%s"
+    account_name:
+      format: "%v-%v"
       labels:
         - tenant
+        - stage
+    stack:
+      format: "%v-%v-%v"
+      labels:
+        - tenant
+        - environment
         - stage
 
 components:
   terraform:
     account-map:
-      vars:
-        accounts:
-          default-test:
-            email_format: aws+cptest-{}@example.com
-            eks: true
-            id: ${ env:TEST_ACCOUNT_ID }
-            ous:
-              - core
-              - plat
-            tags:
-              eks: false
-        all_accounts:
-          - default-test
-        artifact_account: default-test
-        audit_account: default-test
-        dns_account: default-test
-        eks_accounts:
-          - default-test
-        identity_account: default-test
-        root_account: default-test
-        terraform_roles:
-          default-test:
-            apply:
-              role_arn: arn:aws:iam::${ env:TEST_ACCOUNT_ID }:role/cptest-terraform
-            plan:
-              role_arn: arn:aws:iam::${ env:TEST_ACCOUNT_ID }:role/cptest-planner
-        terraform_role_name_map:
-          apply: terraform
-          plan: planner
+      remote_state_backend:
+        static:
+          account_info_map:
+            default-test:
+              account_email_format: aws+cptest-%s@example.com
+              eks: true
+              id: '{{ getenv "TEST_ACCOUNT_ID" | default "<TEST_ACCOUNT_ID>" }}'
+              ou: default
+              parent_ou: none
+              stage: test
+              tags:
+                eks: false
+              tenant: default
+          all_accounts:
+            - default-test
+          artifacts_account_account_name: default-test
+          audit_account_account_name: default-test
+          dns_account_account_name: default-test
+          eks_accounts:
+            - default-test
+          full_account_map:
+            default-test: '{{ getenv "TEST_ACCOUNT_ID" | default "<TEST_ACCOUNT_ID>" }}'
+          iam_role_arn_templates:
+            default-test: 'arn:aws:iam::{{ getenv "TEST_ACCOUNT_ID" | default "<TEST_ACCOUNT_ID>" }}:role/tester-%s'
+          identity_account_account_name: default-test
+          root_account_account_name: default-test
+          terraform_roles:
+            default-test: ""
