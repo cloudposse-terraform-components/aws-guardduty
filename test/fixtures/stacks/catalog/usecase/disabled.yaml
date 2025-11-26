@@ -1,0 +1,9 @@
+components:
+  terraform:
+    guardduty/disabled:
+      metadata:
+        component: target
+      vars:
+        enabled: false
+        delegated_administrator_account_name: default-test
+        admin_delegated: false

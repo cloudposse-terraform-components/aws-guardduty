@@ -422,8 +422,8 @@ This will create:
 | <a name="output_root_sqs_queue_arn"></a> [root\_sqs\_queue\_arn](#output\_root\_sqs\_queue\_arn) | The ARN of the SQS queue subscribed to the GuardDuty SNS topic |
 | <a name="output_root_sqs_queue_name"></a> [root\_sqs\_queue\_name](#output\_root\_sqs\_queue\_name) | The name of the SQS queue subscribed to the GuardDuty SNS topic |
 | <a name="output_root_sqs_queue_url"></a> [root\_sqs\_queue\_url](#output\_root\_sqs\_queue\_url) | The URL of the SQS queue subscribed to the GuardDuty SNS topic |
-| <a name="output_sns_topic_name"></a> [sns\_topic\_name](#output\_sns\_topic\_name) | The name of the SNS topic created by the nested guardduty module |
-| <a name="output_sns_topic_subscriptions"></a> [sns\_topic\_subscriptions](#output\_sns\_topic\_subscriptions) | The SNS topic subscriptions created by the nested guardduty module |
+| <a name="output_sns_topic_name"></a> [sns\_topic\_name](#output\_sns\_topic\_name) | The name of the SNS topic created for GuardDuty findings |
+| <a name="output_sns_topic_subscriptions"></a> [sns\_topic\_subscriptions](#output\_sns\_topic\_subscriptions) | The SNS topic subscriptions for GuardDuty findings |
 <!-- markdownlint-restore -->
 
 

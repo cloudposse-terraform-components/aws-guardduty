@@ -1,0 +1,24 @@
+components:
+  terraform:
+    guardduty/with-features:
+      metadata:
+        component: target
+      vars:
+        enabled: true
+        delegated_administrator_account_name: default-test
+        admin_delegated: false
+        # Disable SNS for this test
+        create_sns_topic: false
+        cloudwatch_enabled: false
+        # Enable all protection features
+        s3_protection_enabled: true
+        kubernetes_audit_logs_enabled: true
+        malware_protection_scan_ec2_ebs_volumes_enabled: true
+        lambda_network_logs_enabled: true
+        # Enable runtime monitoring with agent management
+        runtime_monitoring_enabled: true
+        eks_runtime_monitoring_enabled: false
+        runtime_monitoring_additional_config:
+          eks_addon_management_enabled: true
+          ecs_fargate_agent_management_enabled: true
+          ec2_agent_management_enabled: true

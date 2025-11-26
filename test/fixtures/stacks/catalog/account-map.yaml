@@ -1,0 +1,25 @@
+components:
+  terraform:
+    account-map:
+      metadata:
+        component: account-map
+      settings:
+        spacelift:
+          workspace_enabled: false
+      vars:
+        # This static backend is used for tests that only need to use
+        # the account map iam-roles module to identify what roles are
+        # available for Terraform to use. It requires the TEST_ACCOUNT_ID
+        # environment variable to be set.
+        static:
+          outputs:
+            full_account_map:
+              default-test: ${ env:TEST_ACCOUNT_ID }
+            terraform_roles:
+              default-test:
+                terraform: arn:aws:iam::${ env:TEST_ACCOUNT_ID }:role/cptest-terraform
+            profiles_enabled: false
+            root_account_account_name: default-test
+            iam_role_arn_templates:
+              terraform: arn:aws:iam::${ env:TEST_ACCOUNT_ID }:role/cptest-terraform
+              planner: arn:aws:iam::${ env:TEST_ACCOUNT_ID }:role/cptest-planner

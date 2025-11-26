@@ -25,15 +25,15 @@ output "guardduty_delegated_detector_id" {
   description = "The ID of the GuardDuty detector from the delegated administrator account (via remote state)"
 }
 
-# Outputs for SNS topic from nested module
+# Outputs for SNS topic
 output "sns_topic_name" {
-  value       = local.create_guardduty_collector ? try(module.guardduty[0].sns_topic.name, null) : null
-  description = "The name of the SNS topic created by the nested guardduty module"
+  value       = local.create_sns_topic ? try(module.sns_topic[0].sns_topic.name, null) : null
+  description = "The name of the SNS topic created for GuardDuty findings"
 }
 
 output "sns_topic_subscriptions" {
-  value       = local.create_guardduty_collector ? try(module.guardduty[0].sns_topic_subscriptions, null) : null
-  description = "The SNS topic subscriptions created by the nested guardduty module"
+  value       = local.create_sns_topic ? try(module.sns_topic[0].aws_sns_topic_subscriptions, null) : null
+  description = "The SNS topic subscriptions for GuardDuty findings"
 }
 
 # Outputs for root-level SNS/SQS/KMS resources

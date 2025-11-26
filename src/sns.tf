@@ -13,7 +13,7 @@ module "sns_topic" {
 }
 
 data "aws_iam_policy_document" "sns_topic_combined_policy" {
-  count     = module.this.enabled && local.create_sns_topic ? 1 : 0
+  count     = local.create_sns_topic ? 1 : 0
   policy_id = "GuardDutyPublishToSNS"
 
   # CloudWatch statement
@@ -54,7 +54,7 @@ data "aws_iam_policy_document" "sns_topic_combined_policy" {
       type        = "Service"
       identifiers = ["sqs.amazonaws.com"]
     }
-    resources = [module.sqs[0].queue_arn]
+    resources = [module.sns_topic[0].sns_topic.arn]
     effect    = "Allow"
   }
 }

@@ -1,0 +1,16 @@
+components:
+  terraform:
+    guardduty/validation-conflict:
+      metadata:
+        component: target
+      vars:
+        enabled: true
+        delegated_administrator_account_name: default-test
+        admin_delegated: true
+        create_sns_topic: false
+        cloudwatch_enabled: false
+        s3_protection_enabled: true
+        # This configuration is invalid - both runtime monitoring options enabled
+        # The component should fail validation due to the precondition
+        runtime_monitoring_enabled: true
+        eks_runtime_monitoring_enabled: true

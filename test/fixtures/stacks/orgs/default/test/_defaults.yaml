@@ -1,0 +1,61 @@
+import:
+  - catalog/account-map
+
+terraform:
+  backend_type: local
+  backend:
+    local:
+      path: "../../../state/{{ .Component }}/terraform.tfstate"
+
+vars:
+  namespace: "eg"
+  tenant: "default"
+  environment: "ue2"
+  stage: "test"
+  region: "us-east-2"
+  label_order:
+    - namespace
+    - tenant
+    - environment
+    - stage
+    - name
+    - attributes
+  descriptor_formats:
+    stack:
+      format: "%s-%s"
+      labels:
+        - tenant
+        - stage
+
+components:
+  terraform:
+    account-map:
+      vars:
+        accounts:
+          default-test:
+            email_format: aws+cptest-{}@example.com
+            eks: true
+            id: ${ env:TEST_ACCOUNT_ID }
+            ous:
+              - core
+              - plat
+            tags:
+              eks: false
+        all_accounts:
+          - default-test
+        artifact_account: default-test
+        audit_account: default-test
+        dns_account: default-test
+        eks_accounts:
+          - default-test
+        identity_account: default-test
+        root_account: default-test
+        terraform_roles:
+          default-test:
+            apply:
+              role_arn: arn:aws:iam::${ env:TEST_ACCOUNT_ID }:role/cptest-terraform
+            plan:
+              role_arn: arn:aws:iam::${ env:TEST_ACCOUNT_ID }:role/cptest-planner
+        terraform_role_name_map:
+          apply: terraform
+          plan: planner
