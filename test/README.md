@@ -29,8 +29,7 @@ test/
 │       │       ├── delegated-administrator.yaml
 │       │       ├── with-sns.yaml
 │       │       ├── with-features.yaml
-│       │       ├── disabled.yaml
-│       │       └── validation-conflict.yaml
+│       │       └── disabled.yaml
 │       └── orgs/default/test/
 │           ├── _defaults.yaml
 │           └── test.yaml
@@ -38,13 +37,12 @@ test/
 
 ## Test Cases
 
-| Test Name                                          | Description                                                        |
-|----------------------------------------------------|--------------------------------------------------------------------|
-| `TestGuardDutyDelegatedAdministrator`              | Tests basic GuardDuty detector creation in delegated admin account |
-| `TestGuardDutyWithSNSNotifications`                | Tests GuardDuty with SNS topic, SQS queue, and KMS key creation    |
-| `TestGuardDutyWithProtectionFeatures`              | Tests GuardDuty with various protection features enabled           |
-| `TestGuardDutyDisabled`                            | Tests that nothing is created when the component is disabled       |
-| `TestGuardDutyValidationRuntimeMonitoringConflict` | Tests that conflicting runtime monitoring options fail validation  |
+| Test Name                             | Description                                                        |
+|---------------------------------------|--------------------------------------------------------------------|
+| `TestGuardDutyDelegatedAdministrator` | Tests basic GuardDuty detector creation in delegated admin account |
+| `TestGuardDutyWithSNSNotifications`   | Tests GuardDuty with SNS topic, SQS queue, and KMS key creation    |
+| `TestGuardDutyWithProtectionFeatures` | Tests GuardDuty with various protection features enabled           |
+| `TestGuardDutyDisabled`               | Tests that nothing is created when the component is disabled       |
 
 ## Running Tests
 
@@ -83,14 +81,9 @@ go test -v -timeout 60m ./...
 go test -v -timeout 30m -run TestGuardDutyDelegatedAdministrator ./...
 ```
 
-### Run Tests in Parallel
-
-Tests are designed to run in parallel using `t.Parallel()`. Go will automatically manage parallel execution based on
-available CPU cores.
-
-```bash
-go test -v -timeout 60m -parallel 4 ./...
-```
+> **Note:** Tests run sequentially (not in parallel) because GuardDuty organization-level resources are singletons.
+> The `aws_guardduty_organization_admin_account` resource can only exist once per organization, so parallel
+> test execution would cause race conditions.
 
 ## Test Configuration
 
@@ -100,7 +93,6 @@ Each test case uses a different component configuration defined in `fixtures/sta
 - **with-sns.yaml**: GuardDuty with SNS notifications and CloudWatch events
 - **with-features.yaml**: GuardDuty with all protection features enabled (S3, EKS, Lambda, Runtime Monitoring)
 - **disabled.yaml**: Component disabled, should create no resources
-- **validation-conflict.yaml**: Invalid configuration to test validation preconditions
 
 ## Cleanup
 

@@ -4,4 +4,3 @@ import:
   - catalog/usecase/with-sns
   - catalog/usecase/with-features
   - catalog/usecase/disabled
-  - catalog/usecase/validation-conflict
