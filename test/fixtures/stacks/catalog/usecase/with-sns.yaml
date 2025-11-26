@@ -7,6 +7,10 @@ components:
         enabled: true
         delegated_administrator_account_name: default-test
         admin_delegated: false
+        # Account-map lookup variables - must match the account-map component's stack
+        account_map_tenant: core
+        global_environment: gbl
+        root_account_stage: root
         # Enable SNS notifications
         create_sns_topic: true
         cloudwatch_enabled: true
