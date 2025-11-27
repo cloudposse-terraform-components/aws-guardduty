@@ -52,7 +52,7 @@ resource "aws_guardduty_organization_admin_account" "this" {
   lifecycle {
     precondition {
       condition     = contains(data.aws_organizations_organization.this[0].aws_service_access_principals, "guardduty.amazonaws.com")
-      error_message = "GuardDuty trusted access (guardduty.amazonaws.com) must be enabled in AWS Organizations before delegating administration. This should be configured via the 'account' component's aws_service_access_principals variable."
+      error_message = "GuardDuty trusted access (guardduty.amazonaws.com) must be enabled in AWS Organizations before delegating administration."
     }
   }
 }
@@ -116,11 +116,6 @@ resource "aws_guardduty_organization_configuration" "this" {
       condition     = contains(data.aws_organizations_organization.this[0].aws_service_access_principals, "guardduty.amazonaws.com")
       error_message = <<-EOT
         GuardDuty trusted access must be enabled in AWS Organizations before configuring organization settings.
-
-        To enable trusted access, run this command from the management account:
-          aws organizations enable-aws-service-access --service-principal guardduty.amazonaws.com
-
-        Alternatively, ensure the 'account' component has been applied with guardduty.amazonaws.com in its aws_service_access_principals list.
       EOT
     }
   }

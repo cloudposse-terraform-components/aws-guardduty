@@ -1,6 +1,0 @@
-import:
-  - orgs/default/test/_defaults
-  - catalog/usecase/delegated-administrator
-  - catalog/usecase/with-sns
-  - catalog/usecase/with-features
-  - catalog/usecase/disabled
