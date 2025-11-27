@@ -66,6 +66,31 @@ Key features and components of AWS GuardDuty include:
 GuardDuty offers a scalable and flexible approach to threat detection within AWS environments, providing organizations
 with an additional layer of security to proactively identify and respond to potential security risks.
 
+## Supported GuardDuty Protection Features
+
+This component supports the following GuardDuty protection features:
+
+- **S3 Protection**: Monitors S3 data events to detect suspicious activities in your S3 buckets
+- **EKS Audit Log Monitoring**: Analyzes Kubernetes audit logs from Amazon EKS clusters
+- **Malware Protection**: Scans EBS volumes attached to EC2 instances for malware
+- **Lambda Protection**: Monitors Lambda function network activity logs
+- **Runtime Monitoring**: Provides runtime threat detection for EC2, ECS, and EKS workloads with automatic security agent management
+
+## SNS Notifications
+
+This component creates its own SNS topic, SQS queue, and KMS key for GuardDuty findings notifications instead of using
+the ones from the upstream `cloudposse/guardduty/aws` module. This is a workaround for
+[cloudposse/terraform-aws-guardduty#10](https://github.com/cloudposse/terraform-aws-guardduty/issues/10) where the
+module's SNS topic encryption doesn't grant EventBridge permission to decrypt messages.
+
+The component creates:
+- A custom **KMS key** with proper permissions for EventBridge, SNS, and SQS services
+- An **SNS topic** encrypted with the custom KMS key
+- An **SQS queue** subscribed to the SNS topic for message processing
+- **CloudWatch Event Rules** to route GuardDuty findings to the SNS topic
+
+To enable notifications, set `create_sns_topic: true` and `cloudwatch_enabled: true`.
+
 
 > [!TIP]
 > #### 👽 Use Atmos with Terraform
@@ -86,6 +111,16 @@ with an additional layer of security to proactively identify and respond to pote
 
 **Stack Level**: Regional
 
+## Prerequisites
+
+Before deploying this component, ensure that GuardDuty trusted access is enabled in AWS Organizations. This can be done
+by adding `guardduty.amazonaws.com` to the `aws_service_access_principals` list in your `account` component, or by
+running the following command from the management account:
+
+```bash
+aws organizations enable-aws-service-access --service-principal guardduty.amazonaws.com
+```
+
 ## Deployment Overview
 
 This component is complex in that it must be deployed multiple times with different variables set to configure the AWS
@@ -98,7 +133,7 @@ region that existed before March 2019 and to any regions that have been opted-in
 In the examples below, we assume that the AWS Organization Management account is `root` and the AWS Organization
 Delegated Administrator account is `security`, both in the `core` tenant.
 
-### Deploy to Delegated Administrator Account
+### Step 1: Deploy to Delegated Administrator Account
 
 First, the component is deployed to the
 [Delegated Administrator](https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_organizations.html) account in each
@@ -125,7 +160,7 @@ atmos terraform apply guardduty/delegated-administrator/uw1 -s core-uw1-security
 # ... other regions
 ```
 
-### Deploy to Organization Management (root) Account
+### Step 2: Deploy to Organization Management (root) Account
 
 Next, the component is deployed to the AWS Organization Management, a/k/a `root`, Account in order to set the AWS
 Organization Designated Administrator account.
@@ -159,7 +194,7 @@ atmos terraform apply guardduty/root/uw1 -s core-uw1-root
 # ... other regions
 ```
 
-### Deploy Organization Settings in Delegated Administrator Account
+### Step 3: Deploy Organization Settings in Delegated Administrator Account
 
 Finally, the component is deployed to the Delegated Administrator Account again in order to create the organization-wide
 configuration for the AWS Organization, but with `var.admin_delegated` set to `true` to indicate that the delegation has
@@ -187,6 +222,67 @@ atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
 # ... other regions
 ```
 
+### Enabling GuardDuty Protection Features
+
+You can enable various GuardDuty protection features by setting the corresponding variables. Here's an example with
+all protection features enabled:
+
+```yaml
+# core-ue1-security
+components:
+  terraform:
+    guardduty/org-settings/ue1:
+      metadata:
+        component: guardduty
+      vars:
+        enabled: true
+        delegated_administrator_account_name: core-security
+        environment: use1
+        region: us-east-1
+        admin_delegated: true
+        # Protection features
+        s3_protection_enabled: true
+        kubernetes_audit_logs_enabled: true
+        malware_protection_scan_ec2_ebs_volumes_enabled: true
+        lambda_network_logs_enabled: true
+        # Runtime Monitoring with automatic agent management
+        runtime_monitoring_enabled: true
+        runtime_monitoring_additional_config:
+          eks_addon_management_enabled: true
+          ecs_fargate_agent_management_enabled: true
+          ec2_agent_management_enabled: true
+```
+
+> **Note**: You cannot enable both `eks_runtime_monitoring_enabled` and `runtime_monitoring_enabled` at the same time.
+> Use `runtime_monitoring_enabled` if you want runtime monitoring across EC2, ECS, and EKS resources.
+
+### Enabling SNS Notifications
+
+To enable SNS notifications for GuardDuty findings, set `create_sns_topic` and `cloudwatch_enabled` to `true`:
+
+```yaml
+# core-ue1-security
+components:
+  terraform:
+    guardduty/delegated-administrator/ue1:
+      metadata:
+        component: guardduty
+      vars:
+        enabled: true
+        delegated_administrator_account_name: core-security
+        environment: ue1
+        region: us-east-1
+        # Enable SNS notifications
+        create_sns_topic: true
+        cloudwatch_enabled: true
+```
+
+This will create:
+- A KMS key with permissions for EventBridge, SNS, and SQS
+- An encrypted SNS topic for GuardDuty findings
+- An SQS queue subscribed to the SNS topic
+- CloudWatch Event Rules to route findings to SNS
+
 <!-- prettier-ignore-start -->
 <!-- prettier-ignore-end -->
 
@@ -208,7 +304,7 @@ atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0.0 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3.0 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.0, < 6.0.0 |
 | <a name="requirement_awsutils"></a> [awsutils](#requirement\_awsutils) | >= 0.16.0, < 6.0.0 |
 
@@ -224,20 +320,39 @@ atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
 | Name | Source | Version |
 |------|--------|---------|
 | <a name="module_account_map"></a> [account\_map](#module\_account\_map) | cloudposse/stack-config/yaml//modules/remote-state | 1.8.0 |
+| <a name="module_findings_label"></a> [findings\_label](#module\_findings\_label) | cloudposse/label/null | 0.25.0 |
 | <a name="module_guardduty"></a> [guardduty](#module\_guardduty) | cloudposse/guardduty/aws | 1.0.0 |
 | <a name="module_guardduty_delegated_detector"></a> [guardduty\_delegated\_detector](#module\_guardduty\_delegated\_detector) | cloudposse/stack-config/yaml//modules/remote-state | 1.8.0 |
 | <a name="module_iam_roles"></a> [iam\_roles](#module\_iam\_roles) | ../account-map/modules/iam-roles | n/a |
+| <a name="module_kms_key"></a> [kms\_key](#module\_kms\_key) | cloudposse/kms-key/aws | 0.12.2 |
+| <a name="module_queue_policy"></a> [queue\_policy](#module\_queue\_policy) | cloudposse/iam-policy/aws | 2.0.1 |
+| <a name="module_sns_topic"></a> [sns\_topic](#module\_sns\_topic) | cloudposse/sns-topic/aws | 0.21.0 |
+| <a name="module_sqs"></a> [sqs](#module\_sqs) | terraform-aws-modules/sqs/aws | 4.2.0 |
 | <a name="module_this"></a> [this](#module\_this) | cloudposse/label/null | 0.25.0 |
 
 ## Resources
 
 | Name | Type |
 |------|------|
-| [aws_guardduty_detector_feature.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector_feature) | resource |
+| [aws_cloudwatch_event_rule.findings](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_event_rule) | resource |
+| [aws_cloudwatch_event_target.imported_findings](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_event_target) | resource |
 | [aws_guardduty_organization_admin_account.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_organization_admin_account) | resource |
 | [aws_guardduty_organization_configuration.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_organization_configuration) | resource |
+| [aws_guardduty_organization_configuration_feature.additional](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_organization_configuration_feature) | resource |
+| [aws_guardduty_organization_configuration_feature.ebs_malware_protection](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_organization_configuration_feature) | resource |
+| [aws_guardduty_organization_configuration_feature.eks_audit_logs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_organization_configuration_feature) | resource |
+| [aws_guardduty_organization_configuration_feature.eks_runtime_monitoring](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_organization_configuration_feature) | resource |
+| [aws_guardduty_organization_configuration_feature.lambda_network_logs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_organization_configuration_feature) | resource |
+| [aws_guardduty_organization_configuration_feature.runtime_monitoring](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_organization_configuration_feature) | resource |
+| [aws_guardduty_organization_configuration_feature.s3_data_events](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_organization_configuration_feature) | resource |
+| [aws_sns_topic_policy.sns_topic_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic_policy) | resource |
+| [aws_sqs_queue_policy.sqs_queue_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sqs_queue_policy) | resource |
 | [awsutils_guardduty_organization_settings.this](https://registry.terraform.io/providers/cloudposse/awsutils/latest/docs/resources/guardduty_organization_settings) | resource |
+| [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
 | [aws_caller_identity.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
+| [aws_iam_policy_document.sns_topic_combined_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_organizations_organization.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/organizations_organization) | data source |
+| [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
 
 ## Inputs
 
@@ -253,11 +368,12 @@ atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
 | <a name="input_cloudwatch_event_rule_pattern_detail_type"></a> [cloudwatch\_event\_rule\_pattern\_detail\_type](#input\_cloudwatch\_event\_rule\_pattern\_detail\_type) | The detail-type pattern used to match events that will be sent to SNS.<br/><br/>For more information, see:<br/>https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/CloudWatchEventsandEventPatterns.html<br/>https://docs.aws.amazon.com/eventbridge/latest/userguide/event-types.html<br/>https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_findings_cloudwatch.html | `string` | `"GuardDuty Finding"` | no |
 | <a name="input_context"></a> [context](#input\_context) | Single object for setting entire context at once.<br/>See description of individual variables for details.<br/>Leave string and numeric variables as `null` to use default value.<br/>Individual variable settings (non-null) override settings in context object,<br/>except for attributes, tags, and additional\_tag\_map, which are merged. | `any` | <pre>{<br/>  "additional_tag_map": {},<br/>  "attributes": [],<br/>  "delimiter": null,<br/>  "descriptor_formats": {},<br/>  "enabled": true,<br/>  "environment": null,<br/>  "id_length_limit": null,<br/>  "label_key_case": null,<br/>  "label_order": [],<br/>  "label_value_case": null,<br/>  "labels_as_tags": [<br/>    "unset"<br/>  ],<br/>  "name": null,<br/>  "namespace": null,<br/>  "regex_replace_chars": null,<br/>  "stage": null,<br/>  "tags": {},<br/>  "tenant": null<br/>}</pre> | no |
 | <a name="input_create_sns_topic"></a> [create\_sns\_topic](#input\_create\_sns\_topic) | Flag to indicate whether an SNS topic should be created for notifications. If you want to send findings to a new SNS<br/>topic, set this to true and provide a valid configuration for subscribers. | `bool` | `false` | no |
-| <a name="input_delegated_admininstrator_component_name"></a> [delegated\_admininstrator\_component\_name](#input\_delegated\_admininstrator\_component\_name) | The name of the component that created the GuardDuty detector. | `string` | `"guardduty/delegated-administrator"` | no |
 | <a name="input_delegated_administrator_account_name"></a> [delegated\_administrator\_account\_name](#input\_delegated\_administrator\_account\_name) | The name of the account that is the AWS Organization Delegated Administrator account | `string` | `"core-security"` | no |
+| <a name="input_delegated_administrator_component_name"></a> [delegated\_administrator\_component\_name](#input\_delegated\_administrator\_component\_name) | The name of the component that created the GuardDuty detector. | `string` | `"guardduty/delegated-administrator"` | no |
 | <a name="input_delimiter"></a> [delimiter](#input\_delimiter) | Delimiter to be used between ID elements.<br/>Defaults to `-` (hyphen). Set to `""` to use no delimiter at all. | `string` | `null` | no |
 | <a name="input_descriptor_formats"></a> [descriptor\_formats](#input\_descriptor\_formats) | Describe additional descriptors to be output in the `descriptors` output map.<br/>Map of maps. Keys are names of descriptors. Values are maps of the form<br/>`{<br/>  format = string<br/>  labels = list(string)<br/>}`<br/>(Type is `any` so the map values can later be enhanced to provide additional options.)<br/>`format` is a Terraform format string to be passed to the `format()` function.<br/>`labels` is a list of labels, in order, to pass to `format()` function.<br/>Label values will be normalized before being passed to `format()` so they will be<br/>identical to how they appear in `id`.<br/>Default is `{}` (`descriptors` output will be empty). | `any` | `{}` | no |
-| <a name="input_detector_features"></a> [detector\_features](#input\_detector\_features) | A map of detector features for streaming foundational data sources to detect communication with known malicious domains and IP addresses and identify anomalous behavior.<br/><br/>For more information, see:<br/>https://docs.aws.amazon.com/guardduty/latest/ug/guardduty-features-activation-model.html#guardduty-features<br/><br/>feature\_name:<br/>  The name of the detector feature. Possible values include: S3\_DATA\_EVENTS, EKS\_AUDIT\_LOGS, EBS\_MALWARE\_PROTECTION, RDS\_LOGIN\_EVENTS, EKS\_RUNTIME\_MONITORING, LAMBDA\_NETWORK\_LOGS, RUNTIME\_MONITORING. Specifying both EKS Runtime Monitoring (EKS\_RUNTIME\_MONITORING) and Runtime Monitoring (RUNTIME\_MONITORING) will cause an error. You can add only one of these two features because Runtime Monitoring already includes the threat detection for Amazon EKS resources. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorFeatureConfiguration.html.<br/>status:<br/>  The status of the detector feature. Valid values include: ENABLED or DISABLED.<br/>additional\_configuration:<br/>  Optional information about the additional configuration for a feature in your GuardDuty account. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorAdditionalConfiguration.html.<br/>addon\_name:<br/>  The name of the add-on for which the configuration applies. Possible values include: EKS\_ADDON\_MANAGEMENT, ECS\_FARGATE\_AGENT\_MANAGEMENT, and EC2\_AGENT\_MANAGEMENT. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorAdditionalConfiguration.html.<br/>status:<br/>  The status of the add-on. Valid values include: ENABLED or DISABLED. | <pre>map(object({<br/>    feature_name = string<br/>    status       = string<br/>    additional_configuration = optional(object({<br/>      addon_name = string<br/>      status     = string<br/>    }), null)<br/>  }))</pre> | `{}` | no |
+| <a name="input_detector_features"></a> [detector\_features](#input\_detector\_features) | A map of detector features for streaming foundational data sources to detect communication with known malicious domains and IP addresses and identify anomalous behavior.<br/><br/>For more information, see:<br/>https://docs.aws.amazon.com/guardduty/latest/ug/guardduty-features-activation-model.html#guardduty-features<br/><br/>feature\_name:<br/>  The name of the detector feature. Possible values include: S3\_DATA\_EVENTS, EKS\_AUDIT\_LOGS, EBS\_MALWARE\_PROTECTION, RDS\_LOGIN\_EVENTS, EKS\_RUNTIME\_MONITORING, LAMBDA\_NETWORK\_LOGS, RUNTIME\_MONITORING. Specifying both EKS Runtime Monitoring (EKS\_RUNTIME\_MONITORING) and Runtime Monitoring (RUNTIME\_MONITORING) will cause an error. You can add only one of these two features because Runtime Monitoring already includes the threat detection for Amazon EKS resources. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorFeatureConfiguration.html.<br/>status:<br/>  The status of the detector feature. Valid values include: ENABLED or DISABLED.<br/>additional\_configuration:<br/>  Optional list of additional configurations for a feature in your GuardDuty account. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorAdditionalConfiguration.html.<br/>addon\_name:<br/>  The name of the add-on for which the configuration applies. Possible values include: EKS\_ADDON\_MANAGEMENT, ECS\_FARGATE\_AGENT\_MANAGEMENT, and EC2\_AGENT\_MANAGEMENT. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorAdditionalConfiguration.html.<br/>status:<br/>  The status of the add-on. Valid values include: ENABLED or DISABLED. | <pre>map(object({<br/>    feature_name = string<br/>    status       = string<br/>    additional_configuration = optional(list(object({<br/>      addon_name = string<br/>      status     = string<br/>    })), [])<br/>  }))</pre> | `{}` | no |
+| <a name="input_eks_runtime_monitoring_enabled"></a> [eks\_runtime\_monitoring\_enabled](#input\_eks\_runtime\_monitoring\_enabled) | If `true`, enables EKS Runtime Monitoring.<br/>Note: Do not enable both EKS\_RUNTIME\_MONITORING and RUNTIME\_MONITORING as Runtime Monitoring already includes<br/>threat detection for Amazon EKS resources.<br/><br/>For more information, see:<br/>https://docs.aws.amazon.com/guardduty/latest/ug/eks-runtime-monitoring.html | `bool` | `false` | no |
 | <a name="input_enabled"></a> [enabled](#input\_enabled) | Set to false to prevent the module from creating any resources | `bool` | `null` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | ID element. Usually used for region e.g. 'uw2', 'us-west-2', OR role 'prod', 'staging', 'dev', 'UAT' | `string` | `null` | no |
 | <a name="input_finding_publishing_frequency"></a> [finding\_publishing\_frequency](#input\_finding\_publishing\_frequency) | The frequency of notifications sent for finding occurrences. If the detector is a GuardDuty member account, the value<br/>is determined by the GuardDuty master account and cannot be modified, otherwise it defaults to SIX\_HOURS.<br/><br/>For standalone and GuardDuty master accounts, it must be configured in Terraform to enable drift detection.<br/>Valid values for standalone and master accounts: FIFTEEN\_MINUTES, ONE\_HOUR, SIX\_HOURS."<br/><br/>For more information, see:<br/>https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_findings_cloudwatch.html#guardduty_findings_cloudwatch_notification_frequency | `string` | `null` | no |
@@ -269,6 +385,7 @@ atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
 | <a name="input_label_order"></a> [label\_order](#input\_label\_order) | The order in which the labels (ID elements) appear in the `id`.<br/>Defaults to ["namespace", "environment", "stage", "name", "attributes"].<br/>You can omit any of the 6 labels ("tenant" is the 6th), but at least one must be present. | `list(string)` | `null` | no |
 | <a name="input_label_value_case"></a> [label\_value\_case](#input\_label\_value\_case) | Controls the letter case of ID elements (labels) as included in `id`,<br/>set as tag values, and output by this module individually.<br/>Does not affect values of tags passed in via the `tags` input.<br/>Possible values: `lower`, `title`, `upper` and `none` (no transformation).<br/>Set this to `title` and set `delimiter` to `""` to yield Pascal Case IDs.<br/>Default value: `lower`. | `string` | `null` | no |
 | <a name="input_labels_as_tags"></a> [labels\_as\_tags](#input\_labels\_as\_tags) | Set of labels (ID elements) to include as tags in the `tags` output.<br/>Default is to include all labels.<br/>Tags with empty values will not be included in the `tags` output.<br/>Set to `[]` to suppress all generated tags.<br/>**Notes:**<br/>  The value of the `name` tag, if included, will be the `id`, not the `name`.<br/>  Unlike other `null-label` inputs, the initial setting of `labels_as_tags` cannot be<br/>  changed in later chained modules. Attempts to change it will be silently ignored. | `set(string)` | <pre>[<br/>  "default"<br/>]</pre> | no |
+| <a name="input_lambda_network_logs_enabled"></a> [lambda\_network\_logs\_enabled](#input\_lambda\_network\_logs\_enabled) | If `true`, enables Lambda network logs as a data source for Lambda protection.<br/><br/>For more information, see:<br/>https://docs.aws.amazon.com/guardduty/latest/ug/lambda-protection.html | `bool` | `false` | no |
 | <a name="input_malware_protection_scan_ec2_ebs_volumes_enabled"></a> [malware\_protection\_scan\_ec2\_ebs\_volumes\_enabled](#input\_malware\_protection\_scan\_ec2\_ebs\_volumes\_enabled) | Configure whether Malware Protection is enabled as data source for EC2 instances EBS Volumes in GuardDuty.<br/><br/>For more information, see:<br/>https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector#malware-protection | `bool` | `false` | no |
 | <a name="input_name"></a> [name](#input\_name) | ID element. Usually the component or solution name, e.g. 'app' or 'jenkins'.<br/>This is the only ID element not also included as a `tag`.<br/>The "name" tag is set to the full `id` string. There is no tag with the value of the `name` input. | `string` | `null` | no |
 | <a name="input_namespace"></a> [namespace](#input\_namespace) | ID element. Usually an abbreviation of your organization name, e.g. 'eg' or 'cp', to help ensure generated IDs are globally unique | `string` | `null` | no |
@@ -277,6 +394,8 @@ atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
 | <a name="input_regex_replace_chars"></a> [regex\_replace\_chars](#input\_regex\_replace\_chars) | Terraform regular expression (regex) string.<br/>Characters matching the regex will be removed from the ID elements.<br/>If not set, `"/[^a-zA-Z0-9-]/"` is used to remove all characters other than hyphens, letters and digits. | `string` | `null` | no |
 | <a name="input_region"></a> [region](#input\_region) | AWS Region | `string` | n/a | yes |
 | <a name="input_root_account_stage"></a> [root\_account\_stage](#input\_root\_account\_stage) | The stage name for the Organization root (management) account. This is used to lookup account IDs from account names<br/>using the `account-map` component. | `string` | `"root"` | no |
+| <a name="input_runtime_monitoring_additional_config"></a> [runtime\_monitoring\_additional\_config](#input\_runtime\_monitoring\_additional\_config) | Additional configuration for Runtime Monitoring features.<br/><br/>eks\_addon\_management\_enabled: Enable EKS add-on management<br/>ecs\_fargate\_agent\_management\_enabled: Enable ECS Fargate agent management<br/>ec2\_agent\_management\_enabled: Enable EC2 agent management<br/><br/>For more information, see:<br/>https://docs.aws.amazon.com/guardduty/latest/ug/runtime-monitoring.html | <pre>object({<br/>    eks_addon_management_enabled         = optional(bool, false)<br/>    ecs_fargate_agent_management_enabled = optional(bool, false)<br/>    ec2_agent_management_enabled         = optional(bool, false)<br/>  })</pre> | `{}` | no |
+| <a name="input_runtime_monitoring_enabled"></a> [runtime\_monitoring\_enabled](#input\_runtime\_monitoring\_enabled) | If `true`, enables Runtime Monitoring for EC2, ECS, and EKS resources.<br/>Note: Runtime Monitoring already includes threat detection for Amazon EKS resources, so you should not enable both<br/>RUNTIME\_MONITORING and EKS\_RUNTIME\_MONITORING features.<br/><br/>For more information, see:<br/>https://docs.aws.amazon.com/guardduty/latest/ug/runtime-monitoring.html | `bool` | `false` | no |
 | <a name="input_s3_protection_enabled"></a> [s3\_protection\_enabled](#input\_s3\_protection\_enabled) | If `true`, enables S3 protection.<br/><br/>For more information, see:<br/>https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector#s3-logs | `bool` | `true` | no |
 | <a name="input_stage"></a> [stage](#input\_stage) | ID element. Usually used to indicate role, e.g. 'prod', 'staging', 'source', 'build', 'test', 'deploy', 'release' | `string` | `null` | no |
 | <a name="input_subscribers"></a> [subscribers](#input\_subscribers) | A map of subscription configurations for SNS topics<br/><br/>For more information, see:<br/>https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic_subscription#argument-reference<br/><br/>protocol:<br/>  The protocol to use. The possible values for this are: sqs, sms, lambda, application. (http or https are partially<br/>  supported, see link) (email is an option but is unsupported in terraform, see link).<br/>endpoint:<br/>  The endpoint to send data to, the contents will vary with the protocol. (see link for more information)<br/>endpoint\_auto\_confirms:<br/>  Boolean indicating whether the end point is capable of auto confirming subscription e.g., PagerDuty. Default is<br/>  false.<br/>raw\_message\_delivery:<br/>  Boolean indicating whether or not to enable raw message delivery (the original message is directly passed, not<br/>  wrapped in JSON with the original message in the message property). Default is false. | <pre>map(object({<br/>    protocol               = string<br/>    endpoint               = string<br/>    endpoint_auto_confirms = bool<br/>    raw_message_delivery   = bool<br/>  }))</pre> | `{}` | no |
@@ -287,11 +406,24 @@ atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
 
 | Name | Description |
 |------|-------------|
+| <a name="output_cloudwatch_event_rule_arn"></a> [cloudwatch\_event\_rule\_arn](#output\_cloudwatch\_event\_rule\_arn) | The ARN of the CloudWatch Event Rule for GuardDuty findings |
+| <a name="output_cloudwatch_event_rule_id"></a> [cloudwatch\_event\_rule\_id](#output\_cloudwatch\_event\_rule\_id) | The ID of the CloudWatch Event Rule for GuardDuty findings |
 | <a name="output_delegated_administrator_account_id"></a> [delegated\_administrator\_account\_id](#output\_delegated\_administrator\_account\_id) | The AWS Account ID of the AWS Organization delegated administrator account |
-| <a name="output_guardduty_detector_arn"></a> [guardduty\_detector\_arn](#output\_guardduty\_detector\_arn) | The ARN of the GuardDuty detector created by the component |
-| <a name="output_guardduty_detector_id"></a> [guardduty\_detector\_id](#output\_guardduty\_detector\_id) | The ID of the GuardDuty detector created by the component |
-| <a name="output_sns_topic_name"></a> [sns\_topic\_name](#output\_sns\_topic\_name) | The name of the SNS topic created by the component |
-| <a name="output_sns_topic_subscriptions"></a> [sns\_topic\_subscriptions](#output\_sns\_topic\_subscriptions) | The SNS topic subscriptions created by the component |
+| <a name="output_guardduty_delegated_detector_arn"></a> [guardduty\_delegated\_detector\_arn](#output\_guardduty\_delegated\_detector\_arn) | The ARN of the GuardDuty detector from the delegated administrator account (via remote state) |
+| <a name="output_guardduty_delegated_detector_id"></a> [guardduty\_delegated\_detector\_id](#output\_guardduty\_delegated\_detector\_id) | The ID of the GuardDuty detector from the delegated administrator account (via remote state) |
+| <a name="output_guardduty_detector_arn"></a> [guardduty\_detector\_arn](#output\_guardduty\_detector\_arn) | The ARN of the GuardDuty detector created by the component in this account |
+| <a name="output_guardduty_detector_id"></a> [guardduty\_detector\_id](#output\_guardduty\_detector\_id) | The ID of the GuardDuty detector created by the component in this account |
+| <a name="output_root_kms_key_alias"></a> [root\_kms\_key\_alias](#output\_root\_kms\_key\_alias) | The alias of the KMS key used for encrypting the GuardDuty SNS topic |
+| <a name="output_root_kms_key_arn"></a> [root\_kms\_key\_arn](#output\_root\_kms\_key\_arn) | The ARN of the KMS key used for encrypting the GuardDuty SNS topic |
+| <a name="output_root_kms_key_id"></a> [root\_kms\_key\_id](#output\_root\_kms\_key\_id) | The ID of the KMS key used for encrypting the GuardDuty SNS topic |
+| <a name="output_root_sns_topic_arn"></a> [root\_sns\_topic\_arn](#output\_root\_sns\_topic\_arn) | The ARN of the root-level SNS topic created for GuardDuty findings |
+| <a name="output_root_sns_topic_id"></a> [root\_sns\_topic\_id](#output\_root\_sns\_topic\_id) | The ID of the root-level SNS topic created for GuardDuty findings |
+| <a name="output_root_sns_topic_name"></a> [root\_sns\_topic\_name](#output\_root\_sns\_topic\_name) | The name of the root-level SNS topic created for GuardDuty findings |
+| <a name="output_root_sqs_queue_arn"></a> [root\_sqs\_queue\_arn](#output\_root\_sqs\_queue\_arn) | The ARN of the SQS queue subscribed to the GuardDuty SNS topic |
+| <a name="output_root_sqs_queue_name"></a> [root\_sqs\_queue\_name](#output\_root\_sqs\_queue\_name) | The name of the SQS queue subscribed to the GuardDuty SNS topic |
+| <a name="output_root_sqs_queue_url"></a> [root\_sqs\_queue\_url](#output\_root\_sqs\_queue\_url) | The URL of the SQS queue subscribed to the GuardDuty SNS topic |
+| <a name="output_sns_topic_name"></a> [sns\_topic\_name](#output\_sns\_topic\_name) | The name of the SNS topic created for GuardDuty findings |
+| <a name="output_sns_topic_subscriptions"></a> [sns\_topic\_subscriptions](#output\_sns\_topic\_subscriptions) | The SNS topic subscriptions for GuardDuty findings |
 <!-- markdownlint-restore -->
 
 
@@ -310,7 +442,9 @@ Check out these related projects.
 For additional context, refer to some of these links.
 
 - [AWS GuardDuty Documentation](https://aws.amazon.com/guardduty/) - 
+- [Cloud Posse terraform-aws-guardduty module](https://github.com/cloudposse/terraform-aws-guardduty) - The underlying Terraform module used by this component
 - [Cloud Posse's upstream component](https://github.com/cloudposse/terraform-aws-components/tree/main/modules/guardduty/common/) - 
+- [GuardDuty Organization Configuration Feature](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_organization_configuration_feature) - Terraform AWS provider documentation for organization-wide GuardDuty features
 
 
 
