@@ -1,6 +1,6 @@
 module "sns_topic" {
   source  = "cloudposse/sns-topic/aws"
-  version = "0.21.0"
+  version = "1.2.0"
   count   = local.create_sns_topic ? 1 : 0
 
   subscribers        = local.sqs_subscribe
