@@ -48,7 +48,7 @@ variable "create_sns_topic" {
   DOC
 }
 
-variable "delegated_admininstrator_component_name" {
+variable "delegated_administrator_component_name" {
   type        = string
   default     = "guardduty/delegated-administrator"
   description = "The name of the component that created the GuardDuty detector."
@@ -190,10 +190,10 @@ variable "detector_features" {
   type = map(object({
     feature_name = string
     status       = string
-    additional_configuration = optional(object({
+    additional_configuration = optional(list(object({
       addon_name = string
       status     = string
-    }), null)
+    })), [])
   }))
   default     = {}
   nullable    = false
@@ -208,7 +208,7 @@ variable "detector_features" {
   status:
     The status of the detector feature. Valid values include: ENABLED or DISABLED.
   additional_configuration:
-    Optional information about the additional configuration for a feature in your GuardDuty account. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorAdditionalConfiguration.html.
+    Optional list of additional configurations for a feature in your GuardDuty account. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorAdditionalConfiguration.html.
   addon_name:
     The name of the add-on for which the configuration applies. Possible values include: EKS_ADDON_MANAGEMENT, ECS_FARGATE_AGENT_MANAGEMENT, and EC2_AGENT_MANAGEMENT. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorAdditionalConfiguration.html.
   status:
@@ -220,4 +220,61 @@ variable "account_map_component_name" {
   type        = string
   description = "The name of the account-map component"
   default     = "account-map"
+}
+
+variable "lambda_network_logs_enabled" {
+  type        = bool
+  default     = false
+  description = <<-DOC
+  If `true`, enables Lambda network logs as a data source for Lambda protection.
+
+  For more information, see:
+  https://docs.aws.amazon.com/guardduty/latest/ug/lambda-protection.html
+  DOC
+}
+
+variable "runtime_monitoring_enabled" {
+  type        = bool
+  default     = false
+  description = <<-DOC
+  If `true`, enables Runtime Monitoring for EC2, ECS, and EKS resources.
+  Note: Runtime Monitoring already includes threat detection for Amazon EKS resources, so you should not enable both
+  RUNTIME_MONITORING and EKS_RUNTIME_MONITORING features.
+
+  For more information, see:
+  https://docs.aws.amazon.com/guardduty/latest/ug/runtime-monitoring.html
+  DOC
+}
+
+variable "eks_runtime_monitoring_enabled" {
+  type        = bool
+  default     = false
+  description = <<-DOC
+  If `true`, enables EKS Runtime Monitoring.
+  Note: Do not enable both EKS_RUNTIME_MONITORING and RUNTIME_MONITORING as Runtime Monitoring already includes
+  threat detection for Amazon EKS resources.
+
+  For more information, see:
+  https://docs.aws.amazon.com/guardduty/latest/ug/eks-runtime-monitoring.html
+  DOC
+}
+
+variable "runtime_monitoring_additional_config" {
+  type = object({
+    eks_addon_management_enabled         = optional(bool, false)
+    ecs_fargate_agent_management_enabled = optional(bool, false)
+    ec2_agent_management_enabled         = optional(bool, false)
+  })
+  default     = {}
+  nullable    = false
+  description = <<-DOC
+  Additional configuration for Runtime Monitoring features.
+
+  eks_addon_management_enabled: Enable EKS add-on management
+  ecs_fargate_agent_management_enabled: Enable ECS Fargate agent management
+  ec2_agent_management_enabled: Enable EC2 agent management
+
+  For more information, see:
+  https://docs.aws.amazon.com/guardduty/latest/ug/runtime-monitoring.html
+  DOC
 }
