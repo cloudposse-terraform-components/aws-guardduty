@@ -3,7 +3,7 @@
 module "sqs" {
   count   = local.sqs_enabled ? 1 : 0
   source  = "terraform-aws-modules/sqs/aws"
-  version = "4.2.0"
+  version = "4.3.1"
 
   name                    = "${module.this.id}-guardduty-sqs"
   sqs_managed_sse_enabled = true
