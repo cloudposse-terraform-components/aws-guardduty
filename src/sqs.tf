@@ -13,7 +13,7 @@ module "sqs" {
 module "queue_policy" {
   count   = local.sqs_enabled ? 1 : 0
   source  = "cloudposse/iam-policy/aws"
-  version = "2.0.1"
+  version = "2.0.2"
 
   iam_policy = [
     {
