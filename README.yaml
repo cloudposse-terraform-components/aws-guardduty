@@ -64,6 +64,15 @@ description: |-
 
   To enable notifications, set `create_sns_topic: true` and `cloudwatch_enabled: true`.
 
+  ## Component Features
+
+  - **Delegated Administrator Model**: Uses AWS Organizations delegated administrator pattern for centralized management
+  - **Multi-Region Deployment**: Supports deployment across all AWS regions
+  - **Protection Features**: Configurable protection for S3, EKS, Lambda, Malware, and Runtime Monitoring
+  - **SNS Notifications**: Optional SNS topic creation with KMS encryption for finding alerts
+  - **Account Verification**: Optional safety check that validates Terraform is running in the correct AWS account
+  - **Flexible Account Map**: Supports both remote-state account-map lookups (default) and static account map variables
+
 usage: |-
   **Stack Level**: Regional
 
