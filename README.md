@@ -91,6 +91,15 @@ The component creates:
 
 To enable notifications, set `create_sns_topic: true` and `cloudwatch_enabled: true`.
 
+## Component Features
+
+- **Delegated Administrator Model**: Uses AWS Organizations delegated administrator pattern for centralized management
+- **Multi-Region Deployment**: Supports deployment across all AWS regions
+- **Protection Features**: Configurable protection for S3, EKS, Lambda, Malware, and Runtime Monitoring
+- **SNS Notifications**: Optional SNS topic creation with KMS encryption for finding alerts
+- **Account Verification**: Optional safety check that validates Terraform is running in the correct AWS account
+- **Flexible Account Map**: Supports both remote-state account-map lookups (default) and static account map variables
+
 
 > [!TIP]
 > #### 👽 Use Atmos with Terraform
@@ -143,9 +152,9 @@ region in order to configure the central GuardDuty detector that each account wi
 # core-ue1-security
 components:
   terraform:
-    guardduty/delegated-administrator/ue1:
+    aws-guardduty/delegated-administrator/ue1:
       metadata:
-        component: guardduty
+        component: aws-guardduty
       vars:
         enabled: true
         delegated_administrator_account_name: core-security
@@ -154,9 +163,9 @@ components:
 ```
 
 ```bash
-atmos terraform apply guardduty/delegated-administrator/ue1 -s core-ue1-security
-atmos terraform apply guardduty/delegated-administrator/ue2 -s core-ue2-security
-atmos terraform apply guardduty/delegated-administrator/uw1 -s core-uw1-security
+atmos terraform apply aws-guardduty/delegated-administrator/ue1 -s core-ue1-security
+atmos terraform apply aws-guardduty/delegated-administrator/ue2 -s core-ue2-security
+atmos terraform apply aws-guardduty/delegated-administrator/uw1 -s core-uw1-security
 # ... other regions
 ```
 
@@ -173,9 +182,9 @@ backend config to null and set `var.privileged` to `true`.
 # core-ue1-root
 components:
   terraform:
-    guardduty/root/ue1:
+    aws-guardduty/root/ue1:
       metadata:
-        component: guardduty
+        component: aws-guardduty
     backend:
       s3:
         role_arn: null
@@ -188,9 +197,9 @@ components:
 ```
 
 ```bash
-atmos terraform apply guardduty/root/ue1 -s core-ue1-root
-atmos terraform apply guardduty/root/ue2 -s core-ue2-root
-atmos terraform apply guardduty/root/uw1 -s core-uw1-root
+atmos terraform apply aws-guardduty/root/ue1 -s core-ue1-root
+atmos terraform apply aws-guardduty/root/ue2 -s core-ue2-root
+atmos terraform apply aws-guardduty/root/uw1 -s core-uw1-root
 # ... other regions
 ```
 
@@ -204,9 +213,9 @@ already been performed from the Organization Management account.
 # core-ue1-security
 components:
   terraform:
-    guardduty/org-settings/ue1:
+    aws-guardduty/org-settings/ue1:
       metadata:
-        component: guardduty
+        component: aws-guardduty
       vars:
         enabled: true
         delegated_administrator_account_name: core-security
@@ -216,9 +225,9 @@ components:
 ```
 
 ```bash
-atmos terraform apply guardduty/org-settings/ue1 -s core-ue1-security
-atmos terraform apply guardduty/org-settings/ue2 -s core-ue2-security
-atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
+atmos terraform apply aws-guardduty/org-settings/ue1 -s core-ue1-security
+atmos terraform apply aws-guardduty/org-settings/ue2 -s core-ue2-security
+atmos terraform apply aws-guardduty/org-settings/uw1 -s core-uw1-security
 # ... other regions
 ```
 
@@ -231,9 +240,9 @@ all protection features enabled:
 # core-ue1-security
 components:
   terraform:
-    guardduty/org-settings/ue1:
+    aws-guardduty/org-settings/ue1:
       metadata:
-        component: guardduty
+        component: aws-guardduty
       vars:
         enabled: true
         delegated_administrator_account_name: core-security
@@ -264,9 +273,9 @@ To enable SNS notifications for GuardDuty findings, set `create_sns_topic` and `
 # core-ue1-security
 components:
   terraform:
-    guardduty/delegated-administrator/ue1:
+    aws-guardduty/delegated-administrator/ue1:
       metadata:
-        component: guardduty
+        component: aws-guardduty
       vars:
         enabled: true
         delegated_administrator_account_name: core-security
@@ -305,15 +314,16 @@ This will create:
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3.0 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.0, < 6.0.0 |
-| <a name="requirement_awsutils"></a> [awsutils](#requirement\_awsutils) | >= 0.16.0, < 6.0.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.0.0 |
+| <a name="requirement_awsutils"></a> [awsutils](#requirement\_awsutils) | >= 0.16.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.0, < 6.0.0 |
-| <a name="provider_awsutils"></a> [awsutils](#provider\_awsutils) | >= 0.16.0, < 6.0.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.0.0 |
+| <a name="provider_awsutils"></a> [awsutils](#provider\_awsutils) | >= 0.16.0 |
+| <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
 ## Modules
 
@@ -348,6 +358,7 @@ This will create:
 | [aws_sns_topic_policy.sns_topic_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic_policy) | resource |
 | [aws_sqs_queue_policy.sqs_queue_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sqs_queue_policy) | resource |
 | [awsutils_guardduty_organization_settings.this](https://registry.terraform.io/providers/cloudposse/awsutils/latest/docs/resources/guardduty_organization_settings) | resource |
+| [terraform_data.account_verification](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) | resource |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
 | [aws_caller_identity.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
 | [aws_iam_policy_document.sns_topic_combined_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
@@ -358,8 +369,11 @@ This will create:
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| <a name="input_account_map"></a> [account\_map](#input\_account\_map) | Static account map configuration. Only used when `account_map_enabled` is `false`.<br/>Map keys use `tenant-stage` format (e.g., `core-security`, `core-audit`, `plat-prod`). | <pre>object({<br/>    full_account_map              = map(string)<br/>    audit_account_account_name    = optional(string, "")<br/>    root_account_account_name     = optional(string, "")<br/>    identity_account_account_name = optional(string, "")<br/>    aws_partition                 = optional(string, "aws")<br/>    iam_role_arn_templates        = optional(map(string), {})<br/>  })</pre> | <pre>{<br/>  "audit_account_account_name": "",<br/>  "aws_partition": "aws",<br/>  "full_account_map": {},<br/>  "iam_role_arn_templates": {},<br/>  "identity_account_account_name": "",<br/>  "root_account_account_name": ""<br/>}</pre> | no |
 | <a name="input_account_map_component_name"></a> [account\_map\_component\_name](#input\_account\_map\_component\_name) | The name of the account-map component | `string` | `"account-map"` | no |
+| <a name="input_account_map_enabled"></a> [account\_map\_enabled](#input\_account\_map\_enabled) | Enable the account map component. When true (default), the component fetches account mappings from the<br/>`account-map` component via remote state. When false, the component uses the static `account_map` variable instead. | `bool` | `true` | no |
 | <a name="input_account_map_tenant"></a> [account\_map\_tenant](#input\_account\_map\_tenant) | The tenant where the `account_map` component required by remote-state is deployed | `string` | `"core"` | no |
+| <a name="input_account_verification_enabled"></a> [account\_verification\_enabled](#input\_account\_verification\_enabled) | Enable account verification. When true (default), the component verifies that Terraform is executing<br/>in the correct AWS account by comparing the current account ID against the expected account from the<br/>account\_map based on the component's tenant-stage context. | `bool` | `true` | no |
 | <a name="input_additional_tag_map"></a> [additional\_tag\_map](#input\_additional\_tag\_map) | Additional key-value pairs to add to each map in `tags_as_list_of_maps`. Not added to `tags` or `id`.<br/>This is for some rare cases where resources want additional configuration of tags<br/>and therefore take a list of maps with tag key, value, and additional configuration. | `map(string)` | `{}` | no |
 | <a name="input_admin_delegated"></a> [admin\_delegated](#input\_admin\_delegated) | A flag to indicate if the AWS Organization-wide settings should be created. This can only be done after the GuardDuty<br/>  Administrator account has already been delegated from the AWS Org Management account (usually 'root'). See the<br/>  Deployment section of the README for more information. | `bool` | `false` | no |
 | <a name="input_attributes"></a> [attributes](#input\_attributes) | ID element. Additional attributes (e.g. `workers` or `cluster`) to add to `id`,<br/>in the order they appear in the list. New attributes are appended to the<br/>end of the list. The elements of the list are joined by the `delimiter`<br/>and treated as a single ID element. | `list(string)` | `[]` | no |
@@ -380,6 +394,8 @@ This will create:
 | <a name="input_findings_notification_arn"></a> [findings\_notification\_arn](#input\_findings\_notification\_arn) | The ARN for an SNS topic to send findings notifications to. This is only used if create\_sns\_topic is false.<br/>If you want to send findings to an existing SNS topic, set this to the ARN of the existing topic and set<br/>create\_sns\_topic to false. | `string` | `null` | no |
 | <a name="input_global_environment"></a> [global\_environment](#input\_global\_environment) | Global environment name | `string` | `"gbl"` | no |
 | <a name="input_id_length_limit"></a> [id\_length\_limit](#input\_id\_length\_limit) | Limit `id` to this many characters (minimum 6).<br/>Set to `0` for unlimited length.<br/>Set to `null` for keep the existing setting, which defaults to `0`.<br/>Does not affect `id_full`. | `number` | `null` | no |
+| <a name="input_import_profile_name"></a> [import\_profile\_name](#input\_import\_profile\_name) | AWS Profile name to use when importing a resource | `string` | `null` | no |
+| <a name="input_import_role_arn"></a> [import\_role\_arn](#input\_import\_role\_arn) | IAM Role ARN to use when importing a resource | `string` | `null` | no |
 | <a name="input_kubernetes_audit_logs_enabled"></a> [kubernetes\_audit\_logs\_enabled](#input\_kubernetes\_audit\_logs\_enabled) | If `true`, enables Kubernetes audit logs as a data source for Kubernetes protection.<br/><br/>For more information, see:<br/>https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector#audit_logs | `bool` | `false` | no |
 | <a name="input_label_key_case"></a> [label\_key\_case](#input\_label\_key\_case) | Controls the letter case of the `tags` keys (label names) for tags generated by this module.<br/>Does not affect keys of tags passed in via the `tags` input.<br/>Possible values: `lower`, `title`, `upper`.<br/>Default value: `title`. | `string` | `null` | no |
 | <a name="input_label_order"></a> [label\_order](#input\_label\_order) | The order in which the labels (ID elements) appear in the `id`.<br/>Defaults to ["namespace", "environment", "stage", "name", "attributes"].<br/>You can omit any of the 6 labels ("tenant" is the 6th), but at least one must be present. | `list(string)` | `null` | no |
