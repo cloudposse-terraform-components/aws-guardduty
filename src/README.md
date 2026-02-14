@@ -112,9 +112,9 @@ region in order to configure the central GuardDuty detector that each account wi
 # core-ue1-security
 components:
   terraform:
-    guardduty/delegated-administrator/ue1:
+    aws-guardduty/delegated-administrator/ue1:
       metadata:
-        component: guardduty
+        component: aws-guardduty
       vars:
         enabled: true
         delegated_administrator_account_name: core-security
@@ -123,9 +123,9 @@ components:
 ```
 
 ```bash
-atmos terraform apply guardduty/delegated-administrator/ue1 -s core-ue1-security
-atmos terraform apply guardduty/delegated-administrator/ue2 -s core-ue2-security
-atmos terraform apply guardduty/delegated-administrator/uw1 -s core-uw1-security
+atmos terraform apply aws-guardduty/delegated-administrator/ue1 -s core-ue1-security
+atmos terraform apply aws-guardduty/delegated-administrator/ue2 -s core-ue2-security
+atmos terraform apply aws-guardduty/delegated-administrator/uw1 -s core-uw1-security
 # ... other regions
 ```
 
@@ -142,9 +142,9 @@ backend config to null and set `var.privileged` to `true`.
 # core-ue1-root
 components:
   terraform:
-    guardduty/root/ue1:
+    aws-guardduty/root/ue1:
       metadata:
-        component: guardduty
+        component: aws-guardduty
     backend:
       s3:
         role_arn: null
@@ -157,9 +157,9 @@ components:
 ```
 
 ```bash
-atmos terraform apply guardduty/root/ue1 -s core-ue1-root
-atmos terraform apply guardduty/root/ue2 -s core-ue2-root
-atmos terraform apply guardduty/root/uw1 -s core-uw1-root
+atmos terraform apply aws-guardduty/root/ue1 -s core-ue1-root
+atmos terraform apply aws-guardduty/root/ue2 -s core-ue2-root
+atmos terraform apply aws-guardduty/root/uw1 -s core-uw1-root
 # ... other regions
 ```
 
@@ -173,9 +173,9 @@ already been performed from the Organization Management account.
 # core-ue1-security
 components:
   terraform:
-    guardduty/org-settings/ue1:
+    aws-guardduty/org-settings/ue1:
       metadata:
-        component: guardduty
+        component: aws-guardduty
       vars:
         enabled: true
         delegated_administrator_account_name: core-security
@@ -185,9 +185,9 @@ components:
 ```
 
 ```bash
-atmos terraform apply guardduty/org-settings/ue1 -s core-ue1-security
-atmos terraform apply guardduty/org-settings/ue2 -s core-ue2-security
-atmos terraform apply guardduty/org-settings/uw1 -s core-uw1-security
+atmos terraform apply aws-guardduty/org-settings/ue1 -s core-ue1-security
+atmos terraform apply aws-guardduty/org-settings/ue2 -s core-ue2-security
+atmos terraform apply aws-guardduty/org-settings/uw1 -s core-uw1-security
 # ... other regions
 ```
 
@@ -200,9 +200,9 @@ all protection features enabled:
 # core-ue1-security
 components:
   terraform:
-    guardduty/org-settings/ue1:
+    aws-guardduty/org-settings/ue1:
       metadata:
-        component: guardduty
+        component: aws-guardduty
       vars:
         enabled: true
         delegated_administrator_account_name: core-security
@@ -233,9 +233,9 @@ To enable SNS notifications for GuardDuty findings, set `create_sns_topic` and `
 # core-ue1-security
 components:
   terraform:
-    guardduty/delegated-administrator/ue1:
+    aws-guardduty/delegated-administrator/ue1:
       metadata:
-        component: guardduty
+        component: aws-guardduty
       vars:
         enabled: true
         delegated_administrator_account_name: core-security
