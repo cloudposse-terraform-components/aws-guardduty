@@ -71,7 +71,7 @@ description: |-
   - **Protection Features**: Configurable protection for S3, EKS, Lambda, Malware, and Runtime Monitoring
   - **SNS Notifications**: Optional SNS topic creation with KMS encryption for finding alerts
   - **Account Verification**: Optional safety check that validates Terraform is running in the correct AWS account
-  - **Flexible Account Map**: Supports both remote-state account-map lookups (default) and static account map variables
+  - **Flexible Account Map**: Supports both remote-state account-map lookups and static account map variables (default)
 
 usage: |-
   **Stack Level**: Regional

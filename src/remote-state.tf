@@ -22,8 +22,10 @@ module "guardduty_delegated_detector" {
   # the delegated detector ID from remote state
   count = local.create_guardduty_collector ? 0 : 1
 
-  component  = var.delegated_administrator_component_name
-  stage      = var.delegated_administrator_account_name
+  component = var.delegated_administrator_component_name
+  # delegated_administrator_account_name is in "tenant-stage" format (e.g. "core-security"),
+  # but the remote-state module inherits tenant from context, so we only need the stage part.
+  stage      = element(split("-", var.delegated_administrator_account_name), 1)
   privileged = var.privileged
 
   context = module.this.context
