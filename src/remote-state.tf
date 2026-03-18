@@ -3,12 +3,15 @@ module "account_map" {
   version = "1.8.0"
 
   component   = var.account_map_component_name
-  tenant      = var.account_map_tenant != "" ? var.account_map_tenant : module.this.tenant
-  stage       = var.root_account_stage
-  environment = var.global_environment
+  tenant      = var.account_map_enabled ? coalesce(var.account_map_tenant, module.this.tenant) : null
+  stage       = var.account_map_enabled ? var.root_account_stage : null
+  environment = var.account_map_enabled ? var.global_environment : null
   privileged  = var.privileged
 
   context = module.this.context
+
+  bypass   = !var.account_map_enabled
+  defaults = var.account_map
 }
 
 module "guardduty_delegated_detector" {
@@ -19,8 +22,10 @@ module "guardduty_delegated_detector" {
   # the delegated detector ID from remote state
   count = local.create_guardduty_collector ? 0 : 1
 
-  component  = var.delegated_administrator_component_name
-  stage      = var.delegated_administrator_account_name
+  component = var.delegated_administrator_component_name
+  # delegated_administrator_account_name is in "tenant-stage" format (e.g. "core-security"),
+  # but the remote-state module inherits tenant from context, so we only need the stage part.
+  stage      = element(split("-", var.delegated_administrator_account_name), 1)
   privileged = var.privileged
 
   context = module.this.context
