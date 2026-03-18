@@ -92,7 +92,7 @@ variable "create_sns_topic" {
 
 variable "delegated_administrator_component_name" {
   type        = string
-  default     = "guardduty/delegated-administrator"
+  default     = "aws-guardduty/delegated-administrator"
   description = "The name of the component that created the GuardDuty detector."
 }
 
