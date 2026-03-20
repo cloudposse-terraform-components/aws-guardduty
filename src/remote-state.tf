@@ -1,6 +1,6 @@
 module "account_map" {
   source  = "cloudposse/stack-config/yaml//modules/remote-state"
-  version = "1.8.0"
+  version = "2.0.0"
 
   component   = var.account_map_component_name
   tenant      = var.account_map_enabled ? coalesce(var.account_map_tenant, module.this.tenant) : null
@@ -16,7 +16,7 @@ module "account_map" {
 
 module "guardduty_delegated_detector" {
   source  = "cloudposse/stack-config/yaml//modules/remote-state"
-  version = "1.8.0"
+  version = "2.0.0"
 
   # If we are creating the delegated detector (because we are in the delegated admin account), then don't try to lookup
   # the delegated detector ID from remote state
