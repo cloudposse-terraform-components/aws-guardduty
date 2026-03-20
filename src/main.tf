@@ -181,20 +181,20 @@ resource "aws_guardduty_organization_configuration_feature" "runtime_monitoring"
   auto_enable = var.auto_enable_organization_members
 
   # Use dynamic blocks with explicit list ordering to avoid order-based drift
-  # AWS returns these in this specific order: EKS, EC2, ECS (not alphabetical)
+  # AWS returns these in this specific order: ECS, EC2, EKS (based on observed API behavior)
   dynamic "additional_configuration" {
     for_each = [
       {
-        name        = "EKS_ADDON_MANAGEMENT"
-        auto_enable = var.runtime_monitoring_additional_config.eks_addon_management_enabled ? var.auto_enable_organization_members : "NONE"
+        name        = "ECS_FARGATE_AGENT_MANAGEMENT"
+        auto_enable = var.runtime_monitoring_additional_config.ecs_fargate_agent_management_enabled ? var.auto_enable_organization_members : "NONE"
       },
       {
         name        = "EC2_AGENT_MANAGEMENT"
         auto_enable = var.runtime_monitoring_additional_config.ec2_agent_management_enabled ? var.auto_enable_organization_members : "NONE"
       },
       {
-        name        = "ECS_FARGATE_AGENT_MANAGEMENT"
-        auto_enable = var.runtime_monitoring_additional_config.ecs_fargate_agent_management_enabled ? var.auto_enable_organization_members : "NONE"
+        name        = "EKS_ADDON_MANAGEMENT"
+        auto_enable = var.runtime_monitoring_additional_config.eks_addon_management_enabled ? var.auto_enable_organization_members : "NONE"
       },
     ]
 
