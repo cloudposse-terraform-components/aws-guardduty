@@ -16,6 +16,20 @@ locals {
   create_org_delegation      = local.enabled && local.is_org_management_account
   create_org_configuration   = local.enabled && local.is_org_delegated_administrator_account && var.admin_delegated
 
+  # Organization features that have a dedicated toggle (and a dedicated
+  # `aws_guardduty_organization_configuration_feature` resource below), keyed by feature name.
+  # A feature whose toggle is enabled must not also be listed in `var.detector_features`,
+  # or two resources would manage the same feature.
+  dedicated_organization_features = {
+    S3_DATA_EVENTS         = var.s3_protection_enabled
+    EKS_AUDIT_LOGS         = var.kubernetes_audit_logs_enabled
+    EBS_MALWARE_PROTECTION = var.malware_protection_scan_ec2_ebs_volumes_enabled
+    LAMBDA_NETWORK_LOGS    = var.lambda_network_logs_enabled
+    RUNTIME_MONITORING     = var.runtime_monitoring_enabled
+    EKS_RUNTIME_MONITORING = var.eks_runtime_monitoring_enabled
+  }
+  enabled_dedicated_organization_features = [for name, enabled in local.dedicated_organization_features : name if enabled]
+
   # SNS/SQS/CloudWatch configuration
   sqs_enabled               = local.create_sns_topic
   enable_cloudwatch         = local.create_sns_topic && var.cloudwatch_enabled
@@ -262,4 +276,17 @@ resource "aws_guardduty_organization_configuration_feature" "additional" {
   depends_on = [
     aws_guardduty_organization_configuration.this
   ]
+
+  lifecycle {
+    precondition {
+      condition     = !contains(local.enabled_dedicated_organization_features, each.value.feature_name)
+      error_message = <<-EOT
+        The feature ${each.value.feature_name} (detector_features["${each.key}"]) is already managed by its dedicated variable.
+        Remove it from detector_features, or disable the dedicated variable. Dedicated variables:
+        S3_DATA_EVENTS = s3_protection_enabled, EKS_AUDIT_LOGS = kubernetes_audit_logs_enabled,
+        EBS_MALWARE_PROTECTION = malware_protection_scan_ec2_ebs_volumes_enabled, LAMBDA_NETWORK_LOGS = lambda_network_logs_enabled,
+        RUNTIME_MONITORING = runtime_monitoring_enabled, EKS_RUNTIME_MONITORING = eks_runtime_monitoring_enabled.
+        EOT
+    }
+  }
 }

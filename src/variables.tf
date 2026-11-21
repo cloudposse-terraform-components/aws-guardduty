@@ -245,6 +245,10 @@ variable "detector_features" {
   For more information, see:
   https://docs.aws.amazon.com/guardduty/latest/ug/guardduty-features-activation-model.html#guardduty-features
 
+  Features that have a dedicated variable (S3_DATA_EVENTS, EKS_AUDIT_LOGS, EBS_MALWARE_PROTECTION, LAMBDA_NETWORK_LOGS,
+  RUNTIME_MONITORING, EKS_RUNTIME_MONITORING) must not be listed here while that variable is enabled; the plan fails if they are.
+  Note that `s3_protection_enabled` defaults to `true`.
+
   feature_name:
     The name of the detector feature. Possible values include: S3_DATA_EVENTS, EKS_AUDIT_LOGS, EBS_MALWARE_PROTECTION, RDS_LOGIN_EVENTS, EKS_RUNTIME_MONITORING, LAMBDA_NETWORK_LOGS, RUNTIME_MONITORING. Specifying both EKS Runtime Monitoring (EKS_RUNTIME_MONITORING) and Runtime Monitoring (RUNTIME_MONITORING) will cause an error. You can add only one of these two features because Runtime Monitoring already includes the threat detection for Amazon EKS resources. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorFeatureConfiguration.html.
   status:
