@@ -82,12 +82,14 @@ output "root_kms_key_alias" {
   description = "The alias of the KMS key used for encrypting the GuardDuty SNS topic"
 }
 
+# The rule is created by the `guardduty` module, which does not output it.
+# Its name is `module.findings_label.id` (the module uses the same label), on the default event bus.
 output "cloudwatch_event_rule_arn" {
-  value       = local.enable_cloudwatch ? try(aws_cloudwatch_event_rule.findings[0].arn, null) : null
+  value       = local.enable_cloudwatch && local.create_guardduty_collector ? format("arn:%s:events:%s:%s:rule/%s", one(data.aws_partition.current[*].partition), var.region, local.current_account_id, module.findings_label.id) : null
   description = "The ARN of the CloudWatch Event Rule for GuardDuty findings"
 }
 
 output "cloudwatch_event_rule_id" {
-  value       = local.enable_cloudwatch ? try(aws_cloudwatch_event_rule.findings[0].id, null) : null
+  value       = local.enable_cloudwatch && local.create_guardduty_collector ? module.findings_label.id : null
   description = "The ID of the CloudWatch Event Rule for GuardDuty findings"
 }
