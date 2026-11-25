@@ -18,8 +18,8 @@ locals {
 
   # Organization features that have a dedicated toggle (and a dedicated
   # `aws_guardduty_organization_configuration_feature` resource below), keyed by feature name.
-  # A feature whose toggle is enabled must not also be listed in `var.detector_features`,
-  # or two resources would manage the same feature.
+  # A feature whose toggle is enabled is skipped in `var.detector_features` (the dedicated
+  # resource wins), and the check block below warns about the duplicate.
   dedicated_organization_features = {
     S3_DATA_EVENTS         = var.s3_protection_enabled
     EKS_AUDIT_LOGS         = var.kubernetes_audit_logs_enabled
@@ -29,6 +29,9 @@ locals {
     EKS_RUNTIME_MONITORING = var.eks_runtime_monitoring_enabled
   }
   enabled_dedicated_organization_features = [for name, enabled in local.dedicated_organization_features : name if enabled]
+  duplicate_detector_features = local.create_org_configuration ? sort(distinct([
+    for k, v in var.detector_features : v.feature_name if contains(local.enabled_dedicated_organization_features, v.feature_name)
+  ])) : []
 
   # SNS/SQS/CloudWatch configuration
   sqs_enabled               = local.create_sns_topic
@@ -259,7 +262,11 @@ resource "aws_guardduty_organization_configuration_feature" "eks_runtime_monitor
 # Note: This uses aws_guardduty_organization_configuration_feature for organization-wide settings (Step 3)
 # Do not confuse with aws_guardduty_detector_feature which is for individual detector configuration (Step 1 - in nested module)
 resource "aws_guardduty_organization_configuration_feature" "additional" {
-  for_each = { for k, v in var.detector_features : k => v if local.create_org_configuration }
+  # Features whose dedicated variable is enabled are skipped: the dedicated resource above manages them.
+  for_each = {
+    for k, v in var.detector_features : k => v
+    if local.create_org_configuration && !contains(local.enabled_dedicated_organization_features, v.feature_name)
+  }
 
   detector_id = module.guardduty_delegated_detector[0].outputs.guardduty_detector_id
   name        = each.value.feature_name
@@ -276,17 +283,17 @@ resource "aws_guardduty_organization_configuration_feature" "additional" {
   depends_on = [
     aws_guardduty_organization_configuration.this
   ]
+}
 
-  lifecycle {
-    precondition {
-      condition     = !contains(local.enabled_dedicated_organization_features, each.value.feature_name)
-      error_message = <<-EOT
-        The feature ${each.value.feature_name} (detector_features["${each.key}"]) is already managed by its dedicated variable.
-        Remove it from detector_features, or disable the dedicated variable. Dedicated variables:
-        S3_DATA_EVENTS = s3_protection_enabled, EKS_AUDIT_LOGS = kubernetes_audit_logs_enabled,
-        EBS_MALWARE_PROTECTION = malware_protection_scan_ec2_ebs_volumes_enabled, LAMBDA_NETWORK_LOGS = lambda_network_logs_enabled,
-        RUNTIME_MONITORING = runtime_monitoring_enabled, EKS_RUNTIME_MONITORING = eks_runtime_monitoring_enabled.
-        EOT
-    }
+check "detector_features_dedicated_toggle" {
+  assert {
+    condition     = length(local.duplicate_detector_features) == 0
+    error_message = <<-EOT
+      detector_features lists ${join(", ", local.duplicate_detector_features)}, already managed by the dedicated variable.
+      The entry is ignored and the dedicated variable wins. Remove it from detector_features to silence this warning.
+      Dedicated variables: S3_DATA_EVENTS = s3_protection_enabled, EKS_AUDIT_LOGS = kubernetes_audit_logs_enabled,
+      EBS_MALWARE_PROTECTION = malware_protection_scan_ec2_ebs_volumes_enabled, LAMBDA_NETWORK_LOGS = lambda_network_logs_enabled,
+      RUNTIME_MONITORING = runtime_monitoring_enabled, EKS_RUNTIME_MONITORING = eks_runtime_monitoring_enabled.
+      EOT
   }
 }

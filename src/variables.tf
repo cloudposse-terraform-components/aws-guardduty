@@ -246,7 +246,8 @@ variable "detector_features" {
   https://docs.aws.amazon.com/guardduty/latest/ug/guardduty-features-activation-model.html#guardduty-features
 
   Features that have a dedicated variable (S3_DATA_EVENTS, EKS_AUDIT_LOGS, EBS_MALWARE_PROTECTION, LAMBDA_NETWORK_LOGS,
-  RUNTIME_MONITORING, EKS_RUNTIME_MONITORING) must not be listed here while that variable is enabled; the plan fails if they are.
+  RUNTIME_MONITORING, EKS_RUNTIME_MONITORING) are ignored here while that variable is enabled: the dedicated variable wins and
+  the plan shows a warning.
   Note that `s3_protection_enabled` defaults to `true`.
 
   feature_name:
