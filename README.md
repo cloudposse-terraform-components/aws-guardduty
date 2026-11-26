@@ -299,27 +299,19 @@ This will create:
 ## Requirements
 
 | Name | Version |
-|------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.4.0 |
+| ---- | ------- |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.0 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.0.0 |
 | <a name="requirement_awsutils"></a> [awsutils](#requirement\_awsutils) | >= 0.16.0 |
-
-## Providers
-
-| Name | Version |
-|------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.0.0 |
-| <a name="provider_awsutils"></a> [awsutils](#provider\_awsutils) | >= 0.16.0 |
-| <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
 ## Modules
 
 | Name | Source | Version |
-|------|--------|---------|
-| <a name="module_account_map"></a> [account\_map](#module\_account\_map) | cloudposse/stack-config/yaml//modules/remote-state | 1.8.0 |
+| ---- | ------ | ------- |
+| <a name="module_account_map"></a> [account\_map](#module\_account\_map) | cloudposse/stack-config/yaml//modules/remote-state | 1.8.1 |
 | <a name="module_findings_label"></a> [findings\_label](#module\_findings\_label) | cloudposse/label/null | 0.25.0 |
 | <a name="module_guardduty"></a> [guardduty](#module\_guardduty) | cloudposse/guardduty/aws | 1.0.0 |
-| <a name="module_guardduty_delegated_detector"></a> [guardduty\_delegated\_detector](#module\_guardduty\_delegated\_detector) | cloudposse/stack-config/yaml//modules/remote-state | 1.8.0 |
+| <a name="module_guardduty_delegated_detector"></a> [guardduty\_delegated\_detector](#module\_guardduty\_delegated\_detector) | cloudposse/stack-config/yaml//modules/remote-state | 1.8.1 |
 | <a name="module_kms_key"></a> [kms\_key](#module\_kms\_key) | cloudposse/kms-key/aws | 0.12.2 |
 | <a name="module_queue_policy"></a> [queue\_policy](#module\_queue\_policy) | cloudposse/iam-policy/aws | 2.0.2 |
 | <a name="module_sns_topic"></a> [sns\_topic](#module\_sns\_topic) | cloudposse/sns-topic/aws | 1.2.0 |
@@ -329,7 +321,7 @@ This will create:
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [aws_cloudwatch_event_rule.findings](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_event_rule) | resource |
 | [aws_cloudwatch_event_target.imported_findings](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_event_target) | resource |
 | [aws_guardduty_organization_admin_account.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_organization_admin_account) | resource |
@@ -354,7 +346,7 @@ This will create:
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_account_map"></a> [account\_map](#input\_account\_map) | Static account map configuration. Only used when `account_map_enabled` is `false`.<br/>Map keys use `tenant-stage` format (e.g., `core-security`, `core-audit`, `plat-prod`). | <pre>object({<br/>    full_account_map              = map(string)<br/>    audit_account_account_name    = optional(string, "")<br/>    root_account_account_name     = optional(string, "")<br/>    identity_account_account_name = optional(string, "")<br/>    aws_partition                 = optional(string, "aws")<br/>    iam_role_arn_templates        = optional(map(string), {})<br/>  })</pre> | <pre>{<br/>  "audit_account_account_name": "",<br/>  "aws_partition": "aws",<br/>  "full_account_map": {},<br/>  "iam_role_arn_templates": {},<br/>  "identity_account_account_name": "",<br/>  "root_account_account_name": ""<br/>}</pre> | no |
 | <a name="input_account_map_component_name"></a> [account\_map\_component\_name](#input\_account\_map\_component\_name) | The name of the account-map component | `string` | `"account-map"` | no |
 | <a name="input_account_map_enabled"></a> [account\_map\_enabled](#input\_account\_map\_enabled) | Enable the account map component. When true, the component fetches account mappings from the<br/>`account-map` component via remote state. When false (default), the component uses the static `account_map` variable instead. | `bool` | `false` | no |
@@ -372,7 +364,7 @@ This will create:
 | <a name="input_delegated_administrator_component_name"></a> [delegated\_administrator\_component\_name](#input\_delegated\_administrator\_component\_name) | The name of the component that created the GuardDuty detector. | `string` | `"aws-guardduty/delegated-administrator"` | no |
 | <a name="input_delimiter"></a> [delimiter](#input\_delimiter) | Delimiter to be used between ID elements.<br/>Defaults to `-` (hyphen). Set to `""` to use no delimiter at all. | `string` | `null` | no |
 | <a name="input_descriptor_formats"></a> [descriptor\_formats](#input\_descriptor\_formats) | Describe additional descriptors to be output in the `descriptors` output map.<br/>Map of maps. Keys are names of descriptors. Values are maps of the form<br/>`{<br/>  format = string<br/>  labels = list(string)<br/>}`<br/>(Type is `any` so the map values can later be enhanced to provide additional options.)<br/>`format` is a Terraform format string to be passed to the `format()` function.<br/>`labels` is a list of labels, in order, to pass to `format()` function.<br/>Label values will be normalized before being passed to `format()` so they will be<br/>identical to how they appear in `id`.<br/>Default is `{}` (`descriptors` output will be empty). | `any` | `{}` | no |
-| <a name="input_detector_features"></a> [detector\_features](#input\_detector\_features) | A map of detector features for streaming foundational data sources to detect communication with known malicious domains and IP addresses and identify anomalous behavior.<br/><br/>For more information, see:<br/>https://docs.aws.amazon.com/guardduty/latest/ug/guardduty-features-activation-model.html#guardduty-features<br/><br/>feature\_name:<br/>  The name of the detector feature. Possible values include: S3\_DATA\_EVENTS, EKS\_AUDIT\_LOGS, EBS\_MALWARE\_PROTECTION, RDS\_LOGIN\_EVENTS, EKS\_RUNTIME\_MONITORING, LAMBDA\_NETWORK\_LOGS, RUNTIME\_MONITORING. Specifying both EKS Runtime Monitoring (EKS\_RUNTIME\_MONITORING) and Runtime Monitoring (RUNTIME\_MONITORING) will cause an error. You can add only one of these two features because Runtime Monitoring already includes the threat detection for Amazon EKS resources. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorFeatureConfiguration.html.<br/>status:<br/>  The status of the detector feature. Valid values include: ENABLED or DISABLED.<br/>additional\_configuration:<br/>  Optional list of additional configurations for a feature in your GuardDuty account. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorAdditionalConfiguration.html.<br/>addon\_name:<br/>  The name of the add-on for which the configuration applies. Possible values include: EKS\_ADDON\_MANAGEMENT, ECS\_FARGATE\_AGENT\_MANAGEMENT, and EC2\_AGENT\_MANAGEMENT. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorAdditionalConfiguration.html.<br/>status:<br/>  The status of the add-on. Valid values include: ENABLED or DISABLED. | <pre>map(object({<br/>    feature_name = string<br/>    status       = string<br/>    additional_configuration = optional(list(object({<br/>      addon_name = string<br/>      status     = string<br/>    })), [])<br/>  }))</pre> | `{}` | no |
+| <a name="input_detector_features"></a> [detector\_features](#input\_detector\_features) | A map of detector features for streaming foundational data sources to detect communication with known malicious domains and IP addresses and identify anomalous behavior.<br/><br/>For more information, see:<br/>https://docs.aws.amazon.com/guardduty/latest/ug/guardduty-features-activation-model.html#guardduty-features<br/><br/>Features that have a dedicated variable (S3\_DATA\_EVENTS, EKS\_AUDIT\_LOGS, EBS\_MALWARE\_PROTECTION, LAMBDA\_NETWORK\_LOGS,<br/>RUNTIME\_MONITORING, EKS\_RUNTIME\_MONITORING) are ignored here while that variable is enabled: the dedicated variable wins and<br/>the plan shows a warning.<br/>Note that `s3_protection_enabled` defaults to `true`.<br/><br/>feature\_name:<br/>  The name of the detector feature. Possible values include: S3\_DATA\_EVENTS, EKS\_AUDIT\_LOGS, EBS\_MALWARE\_PROTECTION, RDS\_LOGIN\_EVENTS, EKS\_RUNTIME\_MONITORING, LAMBDA\_NETWORK\_LOGS, RUNTIME\_MONITORING. Specifying both EKS Runtime Monitoring (EKS\_RUNTIME\_MONITORING) and Runtime Monitoring (RUNTIME\_MONITORING) will cause an error. You can add only one of these two features because Runtime Monitoring already includes the threat detection for Amazon EKS resources. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorFeatureConfiguration.html.<br/>status:<br/>  The status of the detector feature. Valid values include: ENABLED or DISABLED.<br/>additional\_configuration:<br/>  Optional list of additional configurations for a feature in your GuardDuty account. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorAdditionalConfiguration.html.<br/>addon\_name:<br/>  The name of the add-on for which the configuration applies. Possible values include: EKS\_ADDON\_MANAGEMENT, ECS\_FARGATE\_AGENT\_MANAGEMENT, and EC2\_AGENT\_MANAGEMENT. For more information, see: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DetectorAdditionalConfiguration.html.<br/>status:<br/>  The status of the add-on. Valid values include: ENABLED or DISABLED. | <pre>map(object({<br/>    feature_name = string<br/>    status       = string<br/>    additional_configuration = optional(list(object({<br/>      addon_name = string<br/>      status     = string<br/>    })), [])<br/>  }))</pre> | `{}` | no |
 | <a name="input_eks_runtime_monitoring_enabled"></a> [eks\_runtime\_monitoring\_enabled](#input\_eks\_runtime\_monitoring\_enabled) | If `true`, enables EKS Runtime Monitoring.<br/>Note: Do not enable both EKS\_RUNTIME\_MONITORING and RUNTIME\_MONITORING as Runtime Monitoring already includes<br/>threat detection for Amazon EKS resources.<br/><br/>For more information, see:<br/>https://docs.aws.amazon.com/guardduty/latest/ug/eks-runtime-monitoring.html | `bool` | `false` | no |
 | <a name="input_enabled"></a> [enabled](#input\_enabled) | Set to false to prevent the module from creating any resources | `bool` | `null` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | ID element. Usually used for region e.g. 'uw2', 'us-west-2', OR role 'prod', 'staging', 'dev', 'UAT' | `string` | `null` | no |
@@ -405,7 +397,7 @@ This will create:
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_cloudwatch_event_rule_arn"></a> [cloudwatch\_event\_rule\_arn](#output\_cloudwatch\_event\_rule\_arn) | The ARN of the CloudWatch Event Rule for GuardDuty findings |
 | <a name="output_cloudwatch_event_rule_id"></a> [cloudwatch\_event\_rule\_id](#output\_cloudwatch\_event\_rule\_id) | The ID of the CloudWatch Event Rule for GuardDuty findings |
 | <a name="output_delegated_administrator_account_id"></a> [delegated\_administrator\_account\_id](#output\_delegated\_administrator\_account\_id) | The AWS Account ID of the AWS Organization delegated administrator account |
