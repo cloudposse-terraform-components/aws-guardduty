@@ -74,26 +74,18 @@ module "findings_label" {
   context    = module.this.context
 }
 
-resource "aws_cloudwatch_event_rule" "findings" {
-  count       = local.enable_cloudwatch == true ? 1 : 0
-  name        = module.findings_label.id
-  description = "GuardDuty Findings"
-  tags        = module.this.tags
-
-  event_pattern = jsonencode(
-    {
-      "source" : [
-        "aws.guardduty"
-      ],
-      "detail-type" : [
-        var.cloudwatch_event_rule_pattern_detail_type
-      ]
-    }
-  )
+data "aws_partition" "current" {
+  count = local.enable_cloudwatch ? 1 : 0
 }
 
-resource "aws_cloudwatch_event_target" "imported_findings" {
-  count = local.enable_notifications == true ? 1 : 0
-  rule  = aws_cloudwatch_event_rule.findings[0].name
-  arn   = local.findings_notification_arn
+# The EventBridge rule for findings is created by the `guardduty` module (see main.tf).
+# This component used to create a second rule with the same name, so both resources managed one AWS rule.
+# Drop the component's copy from the state without deleting the rule, which the module still manages.
+# Its target is destroyed; the module creates the target for the SNS topic.
+removed {
+  from = aws_cloudwatch_event_rule.findings
+
+  lifecycle {
+    destroy = false
+  }
 }

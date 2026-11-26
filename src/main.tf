@@ -36,7 +36,6 @@ locals {
   # SNS/SQS/CloudWatch configuration
   sqs_enabled               = local.create_sns_topic
   enable_cloudwatch         = local.create_sns_topic && var.cloudwatch_enabled
-  enable_notifications      = local.enable_cloudwatch
   findings_notification_arn = local.create_sns_topic ? module.sns_topic[0].sns_topic.arn : var.findings_notification_arn
   sqs_subscribe = local.sqs_enabled ? {
     sqs = {
@@ -80,6 +79,10 @@ resource "aws_guardduty_organization_admin_account" "this" {
 # NOTE: We set create_sns_topic=false in the module and create our own SNS topic instead.
 # This is because of https://github.com/cloudposse/terraform-aws-guardduty/issues/10
 # The module's SNS topic encryption doesn't grant EventBridge permission to decrypt messages.
+#
+# The EventBridge rule for findings (`<id>-guardduty-findings`) and its target are owned by the module.
+# When this component creates the SNS topic, the topic ARN is passed to the module as `findings_notification_arn`.
+# The component must not create a rule of its own: it would have the same name as the module's rule.
 module "guardduty" {
   count   = local.create_guardduty_collector ? 1 : 0
   source  = "cloudposse/guardduty/aws"
@@ -87,7 +90,7 @@ module "guardduty" {
 
   finding_publishing_frequency                    = var.finding_publishing_frequency
   create_sns_topic                                = false # We create our own SNS topic due to issue #10
-  findings_notification_arn                       = var.findings_notification_arn
+  findings_notification_arn                       = local.enable_cloudwatch ? local.findings_notification_arn : var.findings_notification_arn
   subscribers                                     = var.subscribers
   enable_cloudwatch                               = var.cloudwatch_enabled
   cloudwatch_event_rule_pattern_detail_type       = var.cloudwatch_event_rule_pattern_detail_type
